@@ -44,6 +44,9 @@ final class AppEnvironment {
 
     func bootstrap() {
         seedIfNeeded()
+        if let eventSource = audioSession as? AudioSessionEventSourcing {
+            eventSource.eventHandler = drillSession as? AudioSessionEventHandler
+        }
         try? audioSession.configure()
     }
 
@@ -96,13 +99,20 @@ final class AppEnvironment {
             userDescription = "In-memory fallback"
         }
 
+        let settings = AppSettings()
+        let audioSession = LiveAudioSessionService()
+        let drillSession = AVDrillSessionService(
+            audioSession: audioSession,
+            callBehavior: { [weak settings] in settings?.callBehavior ?? .pauseAndResume }
+        )
+
         return AppEnvironment(
             content: content,
             userData: userData,
-            audioSession: StubAudioSessionService(),
-            drillSession: StubDrillSessionService(),
+            audioSession: audioSession,
+            drillSession: drillSession,
             voiceMemo: StubVoiceMemoService(),
-            settings: AppSettings(),
+            settings: settings,
             contentStoreDescription: contentDescription,
             userStoreDescription: userDescription
         )

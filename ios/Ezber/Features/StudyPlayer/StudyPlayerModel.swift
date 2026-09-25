@@ -37,6 +37,13 @@ final class StudyPlayerModel: DrillSessionServiceDelegate {
         )
         self.state = environment.drillSession.state
         environment.drillSession.delegate = self
+        environment.drillSession.setNowPlayingDescription(
+            DrillNowPlayingDescription(
+                presetName: preset.name,
+                surahName: surah.nameLatin,
+                reciterName: environment.content.reciter(id: preset.reciterID)?.name ?? preset.reciterID
+            )
+        )
 
         environment.userData.markPresetUsed(preset.id, at: Date())
         environment.notifyDataChanged()
@@ -92,7 +99,10 @@ final class StudyPlayerModel: DrillSessionServiceDelegate {
     func toggleTranslation() { isTranslationRevealed.toggle() }
 
     func teardown() {
-        environment.drillSession.pause()
+        // Stop and release the audio session when the player is left; the
+        // resume point was persisted at the last repeat boundary.
+        environment.drillSession.stop()
+        environment.drillSession.setNowPlayingDescription(nil)
         environment.drillSession.delegate = nil
         saveSession()
         environment.notifyDataChanged()
