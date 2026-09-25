@@ -24,21 +24,9 @@ class ValidationTests(unittest.TestCase):
         self.config = load_config(root / "config")
         self.fetcher = helpers.synthetic_corpus(self.config, RECITER_SPECS)
 
-    def _bundle(self, *, word_level: bool = False):
-        if word_level:
-            helpers.register_fixture_word_adapter()
-            config_path = Path(self.temp.name) / "word-config"
-            helpers.write_synthetic_config(
-                config_path,
-                RECITER_SPECS,
-                word_level_enabled=True,
-                word_timing_target=("fake-reciter-a", "murattal"),
-            )
-            config = load_config(config_path)
-        else:
-            config = self.config
+    def _bundle(self):
         lock = LockBook(Path(self.temp.name) / "lock.json")
-        return build_bundle(config, self.fetcher, lock), config
+        return build_bundle(self.config, self.fetcher, lock), self.config
 
     def _failures(self, bundle, config) -> list[str]:
         return [check.name for check in run_checks(bundle, config) if not check.ok]
@@ -76,23 +64,35 @@ class ValidationTests(unittest.TestCase):
         )
         self.assertIn("policy.deny_list", self._failures(bundle, config))
 
-    def test_missing_segments_fail(self) -> None:
+    def test_missing_audio_segments_fail(self) -> None:
         bundle, config = self._bundle()
         bundle = copy.deepcopy(bundle)
         bundle.segments = [segment for segment in bundle.segments if segment.reciter_id != 1]
         self.assertIn("segments.coverage_and_ranges", self._failures(bundle, config))
 
-    def test_word_level_bundle_passes(self) -> None:
-        bundle, config = self._bundle(word_level=True)
-        self.assertEqual(self._failures(bundle, config), [])
-        self.assertEqual(len(bundle.words), 12472)
+    def test_missing_word_timing_segments_fail(self) -> None:
+        bundle, config = self._bundle()
+        bundle = copy.deepcopy(bundle)
+        timing_reciter_id = next(reciter.id for reciter in bundle.reciters if reciter.source == "quran_align")
+        bundle.segments = [
+            segment
+            for segment in bundle.segments
+            if not (segment.reciter_id == timing_reciter_id and segment.word_index > 0)
+        ]
+        self.assertIn("segments.coverage_and_ranges", self._failures(bundle, config))
 
     def test_word_segment_without_word_row_fails(self) -> None:
-        bundle, config = self._bundle(word_level=True)
+        bundle, config = self._bundle()
         bundle = copy.deepcopy(bundle)
         bundle.words = [word for word in bundle.words if word.position != 1]
         self.assertIn("words.integrity", self._failures(bundle, config))
         self.assertIn("segments.coverage_and_ranges", self._failures(bundle, config))
+
+    def test_empty_transliteration_fails(self) -> None:
+        bundle, config = self._bundle()
+        bundle = copy.deepcopy(bundle)
+        bundle.transliteration_rows[-1] = dataclasses.replace(bundle.transliteration_rows[-1], text="  ")
+        self.assertIn("editions.complete", self._failures(bundle, config))
 
 
 if __name__ == "__main__":

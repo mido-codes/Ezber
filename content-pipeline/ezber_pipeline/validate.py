@@ -151,34 +151,43 @@ def run_checks(bundle: Bundle, config: PipelineConfig) -> list[CheckResult]:
                 )
                 break
     reciter_id_by_remote = {reciter.remote_id: reciter.id for reciter in bundle.reciters}
+    coverage_expectations: list[tuple[str, str, str]] = []
     for reciter_config in config.enabled_reciters():
-        reciter_id = reciter_id_by_remote.get(reciter_config["remote_id"])
-        if reciter_id is None:
-            failures.append(f"enabled reciter {reciter_config['remote_id']!r} is missing from the bundle")
-            continue
         for style in reciter_config["styles"]:
-            key = (reciter_id, style["id"])
-            if key not in seen:
-                failures.append(
-                    f"reciter {reciter_config['remote_id']} style {style['id']}: no whole-ayah timing segments"
-                )
-            elif len(seen[key]) != len(bundle.ayahs):
-                failures.append(
-                    f"reciter {reciter_config['remote_id']} style {style['id']}: "
-                    f"{len(seen[key])} ayahs with timing, expected {len(bundle.ayahs)}"
-                )
-    # When word timings exist for a reciter/style, they must cover every word.
-    for key, positions in word_seen.items():
+            coverage_expectations.append((reciter_config["remote_id"], style["id"], "audio"))
+    for recitation in config.enabled_timing_recitations():
+        coverage_expectations.append((recitation["remote_id"], recitation["style_id"], "word_timing"))
+    for remote_id, style_id, kind in coverage_expectations:
+        reciter_id = reciter_id_by_remote.get(remote_id)
+        if reciter_id is None:
+            failures.append(f"configured {kind} reciter {remote_id!r} is missing from the bundle")
+            continue
+        key = (reciter_id, style_id)
         if key not in seen:
+            failures.append(f"reciter {remote_id} style {style_id}: no whole-ayah timing segments")
+        elif len(seen[key]) != len(bundle.ayahs):
+            failures.append(
+                f"reciter {remote_id} style {style_id}: "
+                f"{len(seen[key])} ayahs with timing, expected {len(bundle.ayahs)}"
+            )
+    # Every word-timing recitation must cover every word row exactly once.
+    expected_word_positions = {
+        (ayah_id, position)
+        for ayah_id, ayah_positions in word_positions_by_ayah.items()
+        for position in ayah_positions
+    }
+    for remote_id, style_id, kind in coverage_expectations:
+        if kind != "word_timing":
+            continue
+        reciter_id = reciter_id_by_remote.get(remote_id)
+        if reciter_id is None:
             continue  # already reported
-        expected = {
-            (ayah_id, position)
-            for ayah_id, ayah_positions in word_positions_by_ayah.items()
-            for position in ayah_positions
-        }
-        missing = expected - positions
+        positions = word_seen.get((reciter_id, style_id), set())
+        missing = expected_word_positions - positions
         if missing:
-            failures.append(f"word timings for reciter {key} miss {len(missing)} word positions")
+            failures.append(
+                f"word timings for reciter {remote_id} style {style_id} miss {len(missing)} word positions"
+            )
     checks.append(_result("segments.coverage_and_ranges", failures))
 
     # -- Audio -------------------------------------------------------------

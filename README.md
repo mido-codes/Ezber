@@ -91,35 +91,41 @@ car integration yet. Screen implementation starts at M1 (see the
 | `schema/content_schema.sql` | Shared content DB schema (read-only in the app) |
 | `schema/user_schema.sql` | Shared user DB schema (presets, progress, notes + FTS5, sessions, plan state, downloads) |
 | `licenses/registry.json` | Machine-readable license registry with obligations and attribution templates |
-| `licenses/notices/` | Verbatim upstream notices shipped with the bundle (Tanzil) |
+| `licenses/notices/` | Verbatim upstream notices and provenance blocks verified on every build |
 | `docs/` | Licensing, schema, captain-decision and pipeline notes |
 | `content-pipeline/build/` | Generated bundle artifacts (manifests committed, SQLite ignored) |
 
 ```sh
 make pipeline   # fetch upstream content, validate it, write build/ (network)
-make test       # offline unit + end-to-end tests (no network, ~4s)
+make test       # offline unit + end-to-end tests (no network)
 make verify     # re-check the built SQLite bundle against its manifest
 ```
 
-**Current bundle:** Tanzil Quran text v1.1 (Uthmani, verbatim, CC BY 3.0 with
-its notice) plus Tanzil metadata, packaged deterministically into SQLite and
-manifests. Captain decisions of 2026-09-25 shape the rest:
+**Current bundle (~50 MB SQLite):** Tanzil Quran text v1.1 (Uthmani, verbatim,
+CC BY 3.0 with its notice), Tanzil metadata, the Tanzil English transliteration
+(written permission; split into 77,800 word tokens), and cpfair/quran-align
+CC BY 4.0 word timings for 11 recitations (924,396 timing segments). The
+As-Sudais quran-align asset ships upstream as a crash log and is excluded with
+its hash recorded. Everything is packaged deterministically with content,
+audio and credits manifests.
+
+Decisions already taken (2026-09-25):
 
 - **No English translation** and **no Quran Foundation content or runtime
   API/OAuth path**: the app is fully offline and ships only redistributable
   content.
 - **Reciter audio is off** until Quran Foundation confirms sources in writing;
-  five CC BY 4.0 candidates and the off Islamic Network fallback are documented
-  in the audio manifest, and QuranicAudio stays deny-listed.
-- **Word-level transliteration + per-word timing** has a swappable adapter seam
-  (`config/word_level.json`, `sources/word_level.py`), disabled until a
-  redistributable source passes the rights review.
+  the audio manifest lists pending candidates and the off Islamic Network
+  fallback, and QuranicAudio stays deny-listed.
 - **Offline downloads** default to per surah with per-preset scope as a preset
   option (`presets.download_scope`).
+- fawazahmed and ummahapi are deliberately not used (mirror-only Unlicense and
+  QF-derived respectively).
 
 Read `docs/licensing.md` before shipping anything, and
 `docs/captain-decisions.md` for the remaining open calls.
 
-**Non-negotiables:** never modify the Quran text (Tanzil 1.1 verbatim); no
-secrets in the repo; no QuranicAudio-backed recordings (build fails on the
-deny-list); content and user data stay in separate SQLite files.
+**Non-negotiables:** never modify the Quran text (Tanzil 1.1 verbatim) or the
+Tanzil transliteration edition (markup stripped only); no secrets in the repo;
+no QuranicAudio-backed recordings (build fails on the deny-list); content and
+user data stay in separate SQLite files.

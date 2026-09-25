@@ -146,10 +146,22 @@ def _show_config(args: argparse.Namespace) -> int:
             source_id: {"url": source.url, "license_id": source.license_id}
             for source_id, source in sorted(config.sources.items())
         },
-        "word_level": {
-            "enabled": config.word_level.get("enabled"),
-            "active_source": config.word_level.get("active_source"),
-            "candidates": [candidate.get("source_id") for candidate in config.word_level.get("candidates", [])],
+        "transliteration": {
+            "resource_id": config.transliteration.get("edition", {}).get("resource_id"),
+            "license_id": config.transliteration.get("edition", {}).get("license_id"),
+        },
+        "word_timing": {
+            "enabled": config.word_timing.get("enabled"),
+            "source": config.word_timing.get("source"),
+            "release_tag": config.word_timing.get("release_tag"),
+            "enabled_recitations": [
+                recitation["remote_id"] for recitation in config.enabled_timing_recitations()
+            ],
+            "excluded_recitations": [
+                recitation["remote_id"]
+                for recitation in config.word_timing.get("recitations", [])
+                if recitation.get("status") == "excluded"
+            ],
         },
         "reciters": [
             {

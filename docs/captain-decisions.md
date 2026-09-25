@@ -6,10 +6,39 @@ own. The research report (`/home/dogukan/dev/firstmate/data/quran-app-tech/repor
 recorded here rather than silently baked into code. When a decision closes,
 update this file in the same commit as the resulting change.
 
+## Resolved by the captain — 2026-09-25 (inbox 002)
+
+The captain named the final sources for transliteration and word timing. Code
+and docs were updated to match.
+
+1. **Tanzil English transliteration is cleared by written permission.** Wired
+   in as the ayah-level transliteration edition (`tanzil.en.transliteration`)
+   with attribution and the grant recorded in `licenses/registry.json`
+   (`tanzil-transliteration-permission`) and `docs/licensing.md`. Resolves
+   CD-3's transliteration half.
+2. **Word-level transliteration is derived by splitting** each ayah line on
+   whitespace into per-word tokens (`words` table). `text_uthmani` is set only
+   when the token count equals the Uthmani space-split word count; mismatched
+   ayahs keep NULL rather than a wrong word.
+3. **cpfair/quran-align CC BY 4.0 timings are wired for word highlighting**,
+   limited to the recitations the package supports. The 2016-11-24 release
+   ships 12 files; the As-Sudais file is an align-tool crash log, so 11 are
+   enabled and the 12th is recorded as excluded with its hash. Malformed
+   segments are repaired deterministically and counted in the manifest.
+   Resolves CD-6.
+4. **fawazahmed and ummahapi must not be added**: fawazahmed only mirrors
+   Tanzil and its repository Unlicense does not cover the content; ummahapi is
+   Quran-Foundation-derived and cannot be bundled offline.
+5. **The reciter catalogue stays pending QF written confirmation** (CD-2
+   unchanged): `config/reciters.json` entries remain disabled; quran-align
+   timings are staged as timing-only recitations with no audio files.
+6. **Offline downloads stay** per surah by default with per-preset as an
+   option (as decided in inbox 001).
+
 ## Resolved by the captain — 2026-09-25 (inbox 001)
 
-The captain's decisions arrived as one message; the code and docs were updated
-to match. These supersede the earlier "foundation defaults".
+The captain's first decision message; the code and docs were updated to match.
+These supersede the earlier "foundation defaults".
 
 1. **No English translation.** Pickthall and all QF translation content are
    dropped. The app's reading surface is transliteration/romanization only,
@@ -27,10 +56,10 @@ to match. These supersede the earlier "foundation defaults".
    `settings['downloads.scope'] = 'surah'`. Resolves CD-5's download half.
 4. **Word highlighting is required.** The schema carries word-level
    transliteration (`words.transliteration`) and per-word timing
-   (`segments.word_index >= 1`), and the pipeline has a swappable
-   `sources/word_level.py` adapter (config: `config/word_level.json`,
-   disabled). No word data is bundled until a bundleable, redistributable
-   source passes the rights review. Updates CD-6.
+   (`segments.word_index >= 1`), and the pipeline reserved a swappable adapter
+   seam, disabled at that point. No word data was bundled until a bundleable,
+   redistributable source passed the rights review; the sources were named
+   later in inbox 002. Updates CD-6.
 5. **Reciter catalog gate is Quran Foundation's written confirmation.** All
    Internet Archive candidates are disabled (`enabled: false`,
    `status: pending_written_confirmation`); the pipeline builds zero reciters
@@ -48,19 +77,19 @@ to match. These supersede the earlier "foundation defaults".
 ### CD-2 — Reciter shortlist (gate set, shortlist pending)
 - **Question:** which reciters ship once Quran Foundation's written
   confirmations exist?
-- **Current state:** gate and mechanism are implemented and enforced; no reciter
-  enabled. Candidates documented in `config/reciters.json`.
+- **Current state:** gate and mechanism are implemented and enforced; no audio
+  reciter enabled. Candidates documented in `config/reciters.json`;
+  quran-align timing-only recitations are staged separately (no audio) so word
+  highlighting works once matching audio is confirmed.
 - **To close:** bring the written confirmations, enable the confirmed entries,
   keep the machine-checked license verification in place.
 
 ### CD-6 — Word-level transliteration / timing source
-- **Question:** which redistributable source provides the word transliteration
-  and per-word timings?
-- **Current state:** adapter contract, schema and validation are in place
-  (`sources/word_level.py`, `config/word_level.json`); no source enabled.
-  Candidates listed off: QUL word transliteration, `cpfair/quran-align` timing.
-- **To close:** name the rights-cleared source, add its adapter and license
-  entry, set `enabled: true` and the `timing_target`.
+- **Resolved 2026-09-25:** Tanzil ayah-level transliteration split into word
+  tokens + cpfair/quran-align CC BY 4.0 word timings (11 of 12 released
+  recitations; As-Sudais file is corrupt and excluded).
+- **Remaining nit:** an As-Sudais timing replacement would need a new upstream
+  release or a different source; the pipeline will pick it up by config change.
 
 ## Recorded defaults still in force
 

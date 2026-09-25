@@ -28,6 +28,20 @@ DATA_TABLES = [
     "transliteration_rows",
 ]
 
+# Explicit ordering keys keep logical digests stable for WITHOUT ROWID tables.
+TABLE_ORDER = {
+    "surahs": "id",
+    "ayahs": "id",
+    "words": "id",
+    "reciters": "id",
+    "audio_files": "id",
+    "segments": "reciter_id, variant, ayah_id, word_index",
+    "translations": "id",
+    "translation_rows": "translation_id, ayah_id",
+    "transliterations": "id",
+    "transliteration_rows": "transliteration_id, ayah_id",
+}
+
 
 @dataclass
 class PackageResult:
@@ -256,7 +270,7 @@ def create_database(bundle: Bundle, schema_path: Path, target: Path) -> tuple[st
 def _logical_digest(conn: sqlite3.Connection) -> str:
     parts: list[Any] = []
     for table in DATA_TABLES:
-        rows = conn.execute(f"SELECT * FROM {table} ORDER BY rowid").fetchall()
+        rows = conn.execute(f"SELECT * FROM {table} ORDER BY {TABLE_ORDER[table]}").fetchall()
         parts.append([table, [list(row) for row in rows]])
     return digest_json(parts)
 
@@ -365,9 +379,16 @@ def build_audio_manifest(bundle: Bundle, config: PipelineConfig) -> dict[str, An
     for audio in bundle.audio_files:
         audio_by_group.setdefault((audio.reciter_id, audio.variant, audio.bitrate or 0), []).append(audio)
 
+    segment_counts: dict[int, dict[str, int]] = {}
+    for segment in bundle.segments:
+        bucket = segment_counts.setdefault(segment.reciter_id, {"whole_ayah": 0, "word": 0})
+        bucket["whole_ayah" if segment.word_index == 0 else "word"] += 1
+
     reciters: list[dict[str, Any]] = []
+    audio_reciters = [reciter for reciter in bundle.reciters if reciter.source != "quran_align"]
+    timing_reciters = [reciter for reciter in bundle.reciters if reciter.source == "quran_align"]
     reciter_configs = {entry["remote_id"]: entry for entry in config.enabled_reciters()}
-    for reciter in sorted(bundle.reciters, key=lambda item: item.id):
+    for reciter in sorted(audio_reciters, key=lambda item: item.id):
         reciter_config = reciter_configs[reciter.remote_id]
         styles: list[dict[str, Any]] = []
         for style in reciter_config["styles"]:
@@ -439,6 +460,38 @@ def build_audio_manifest(bundle: Bundle, config: PipelineConfig) -> dict[str, An
             "admission_rule": config.catalog_policy.get("admission_rule", ""),
         },
         "reciters": reciters,
+        "timing_recitations": [
+            {
+                "remote_id": reciter.remote_id,
+                "name": reciter.name,
+                "style": reciter.style,
+                "qirat": reciter.qirat,
+                "status": reciter.status,
+                "license_id": reciter.license_id,
+                "license_url": reciter.license_url,
+                "license_evidence_url": reciter.license_evidence_url,
+                "attribution": reciter.attribution,
+                "has_audio": False,
+                "whole_ayah_segments": segment_counts.get(reciter.id, {}).get("whole_ayah", 0),
+                "word_segments": segment_counts.get(reciter.id, {}).get("word", 0),
+            }
+            for reciter in sorted(timing_reciters, key=lambda item: item.id)
+        ],
+        "word_timing": {
+            "source": config.word_timing.get("source"),
+            "release_tag": config.word_timing.get("release_tag"),
+            "release_page": config.word_timing.get("release_page"),
+            "alignment_policy": config.word_timing.get("alignment_policy"),
+            "excluded": [
+                {
+                    "remote_id": recitation.get("remote_id"),
+                    "asset": recitation.get("asset"),
+                    "reason": recitation.get("excluded_reason"),
+                }
+                for recitation in config.word_timing.get("recitations", [])
+                if recitation.get("status") == "excluded"
+            ],
+        },
         "pending_reciter_candidates": [
             {
                 "remote_id": reciter["remote_id"],

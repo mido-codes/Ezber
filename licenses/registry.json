@@ -45,6 +45,56 @@
       ],
       "attribution": "Recitation audio and ayah timing: {reciter_name} ({qirat}, {style}), provided by Dhikr Al-Huda App on the Internet Archive (item {item_id}), licensed CC BY 4.0.",
       "notes": "Not yet shippable: captain decision CD-2 requires a written confirmation from Quran Foundation before any reciter is enabled, so all current candidates are disabled. Whenever an item is enabled the pipeline machine-checks that it still declares the expected license URL in its Internet Archive metadata."
+    },
+    {
+      "id": "tanzil-transliteration-permission",
+      "spdx": "LicenseRef-Tanzil-WrittenPermission",
+      "name": "Tanzil English transliteration - use cleared by written permission",
+      "url": "https://tanzil.net/trans/",
+      "evidence_urls": [
+        "https://tanzil.net/trans/en.transliteration",
+        "https://tanzil.net/docs/Translations_Resources"
+      ],
+      "redistribution": "allowed_with_conditions",
+      "commercial_use": "permission_granted",
+      "attribution_required": true,
+      "notice_required": false,
+      "modification": "not_allowed",
+      "written_permission": {
+        "status": "granted",
+        "grantee": "Ezber",
+        "scope": "Tanzil English transliteration edition en.transliteration, bundled and displayed in the Ezber app",
+        "recorded_at": "2026-09-25",
+        "record": "The written grant is retained in the captain's records and is not committed to this repository. Captain confirmation: 'Tanzil English transliteration is CLEARED by written permission' (inbox 002, 2026-09-25)."
+      },
+      "obligations": [
+        "Credit Tanzil Project and link https://tanzil.net in the app credits.",
+        "Keep the edition verbatim; the pipeline only strips the page's presentation markup and splits the text into word tokens for display.",
+        "Keep the written grant on file alongside the content manifest for store review."
+      ],
+      "attribution": "Transliteration: Tanzil Project (https://tanzil.net), used with written permission.",
+      "notes": "Source page: https://tanzil.net/trans/en.transliteration (edition en.transliteration, last update September 6, 2010). The page ships the full text with presentation markup; the pipeline strips tags without changing the transliteration letters and verifies the provenance header on every build."
+    },
+    {
+      "id": "cc-by-4.0-quran-align",
+      "spdx": "CC-BY-4.0",
+      "name": "Creative Commons Attribution 4.0 International (cpfair/quran-align data)",
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "evidence_urls": [
+        "https://github.com/cpfair/quran-align#data",
+        "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24"
+      ],
+      "redistribution": "allowed",
+      "commercial_use": "allowed",
+      "attribution_required": true,
+      "notice_required": false,
+      "modification": "allowed_with_attribution",
+      "obligations": [
+        "Credit Collin Fair / cpfair/quran-align and link the repository and the CC BY 4.0 license in the app credits.",
+        "State that the pipeline drops or repairs malformed entries from the released timing files and interpolates uncovered words; the manifest records the repair counts per recitation."
+      ],
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "notes": "The release archive's data files are CC BY 4.0 (the align tool's source code is MIT). The 2016-11-24 release contains 12 recitation files; the Abdurrahmaan As-Sudais file is an align-tool crash log and is excluded, and the remaining 11 files contain a small number of malformed segments that the pipeline repairs deterministically."
     }
   ]
 }

@@ -5,10 +5,10 @@ Ezber is a Quran memorization and listening app for iPhone and Android. The repo
 ## Orientation
 
 - `README.md` is the product brief; it is the source of truth for scope and behavior.
-- `content-pipeline/README.md` — pipeline architecture, commands, content policy, word-level adapter seam, reciter admission rules, cache and lock.
+- `content-pipeline/README.md` — pipeline architecture, content policy, word derivation and timing alignment, reciter admission, cache and lock.
 - `schema/README.md` and `docs/shared-schema.md` — content DB vs user DB, conventions, example joins. Content and user data live in separate SQLite files on purpose.
-- `docs/licensing.md` — what is shipped, per-asset obligations and residual risks; the Tanzil transliteration grant is recorded here.
-- `docs/captain-decisions.md` — resolved decisions and the still-open items. Record new captain calls there; do not decide them in code.
+- `docs/licensing.md` — shipped assets, the Tanzil transliteration grant, the quran-align repair policy, residual risks.
+- `docs/captain-decisions.md` — resolved captain decisions and the still-open items. Record new captain calls there; do not decide them in code.
 - `content-pipeline/build/` — generated artifacts. Manifests, credits and notices are tracked so reviews can read them; `*.sqlite` and `build-report.json` are gitignored.
 - The iOS app lives in `ios/` (SwiftUI, iOS 17+, Xcode 16+). Build on macOS with `open ios/Ezber.xcodeproj` or `xcodebuild -project ios/Ezber.xcodeproj -scheme Ezber -destination 'platform=iOS Simulator,name=iPhone 16' build`.
 - The ported design system lives in `ios/Ezber/DesignSystem/`: `EzberTheme.swift` is the single source of truth for colour, type, spacing, radius and shadow tokens, and the component files next to it mirror the kit at `data/ezber-design-system` (firstmate workspace). Exact token values are tabulated in `data/ezber-design-review/report.md`. Use those tokens instead of raw colours, fonts or radii. The kit's `accent` (honey) is reserved for the active-verse cue, never actions, progress or tint.
@@ -16,17 +16,18 @@ Ezber is a Quran memorization and listening app for iPhone and Android. The repo
 
 ## Commands
 
-- `make test` — offline content suite (synthetic 114-surah corpus, fake word-level adapter, fake fetcher); the determinism test asserts byte-identical rebuilds. Gate for every content or pipeline change.
-- `make pipeline` — real network build; `make verify` then re-checks the SQLite bundle against the manifest.
+- `make test` — offline suite (synthetic 114-surah corpus, a synthetic quran-align archive with deliberate defects, and a fake fetcher); the determinism test asserts byte-identical rebuilds. Gate for every content or pipeline change.
+- `make pipeline` — real network build (~20s warm cache, ~50 MB SQLite); `make verify` re-checks the SQLite bundle against the manifest.
 - Rebuilds verify `content-pipeline/config/source-lock.json`; upstream changes fail the build until `python3 -m ezber_pipeline build --update-lock` is run deliberately.
 - There is no iOS test target; verify with Xcode previews and a macOS `xcodebuild` build. Linux worktrees have no Swift or Xcode toolchain, so a syntax parse is the strongest local gate.
 
 ## Non-negotiables
 
 - Quran text is Tanzil 1.1, verbatim and unmodified; the pipeline compares the upstream copyright notice against `licenses/notices/` and fails on drift.
-- The bundle is offline and redistributable only: no Quran Foundation content, no Content API, OAuth or token broker, and no English translation.
-- Reciters are enabled only after Quran Foundation confirms the source in writing; QuranicAudio is deny-listed in `content-pipeline/config/sources.json`, and disabled candidates stay documented in the audio manifest.
-- Word-level transliteration and timing only through the word-level adapter with a licence in the registry and a redistributable source; keep the adapter off otherwise.
+- The Tanzil transliteration is used under a written grant held by the captain; only the page's presentation markup is stripped, and the provenance header is re-verified against `licenses/notices/tanzil-transliteration-en.transliteration.txt`.
+- The bundle is offline and redistributable only: no Quran Foundation content, no Content API, OAuth or token broker, and no English translation. Do not add fawazahmed or ummahapi.
+- quran-align timings are limited to the recitations the package supports; the As-Sudais asset is a crash log and stays excluded with its hash recorded. Repairs must stay deterministic and counted in the manifest.
+- Reciters are enabled only after Quran Foundation confirms the source in writing; disabled candidates and the off Islamic Network fallback stay documented in the audio manifest. QuranicAudio is deny-listed in `content-pipeline/config/sources.json`.
 - Generated manifests, credits and JSON digests must stay deterministic — the test suite builds twice and compares bytes.
 - `ios/Ezber.xcodeproj` uses an Xcode file-system-synchronized group: files added under `ios/Ezber/` are compiled automatically and the project file does not need edits.
 - iOS persistence keeps content and user data in separate SQLite stores (`content.sqlite`, `user.sqlite`). The DDL lives in `ios/Ezber/Persistence/Schema.swift` and is provisional until the canonical shared schema lands under `schema/`; replace it there rather than forking.

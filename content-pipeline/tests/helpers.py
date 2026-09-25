@@ -1,17 +1,19 @@
 """Shared test helpers: deterministic synthetic corpus and a fake fetcher.
 
-The end-to-end test builds the *entire* pipeline output (114 surahs, 6236
-ayahs, enabled synthetic reciters and an optional word-level adapter) from
-generated fixtures, so packaging, validation, locking and determinism are all
-exercised without the network.
+The end-to-end tests build the *entire* pipeline output (114 surahs, 6236
+ayahs, Tanzil transliteration words, quran-align word timings, and enabled
+synthetic audio reciters) from generated fixtures, so packaging, validation,
+locking and determinism are all exercised without the network.
 """
 
 from __future__ import annotations
 
+import io
 import json
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -19,13 +21,41 @@ from typing import Any
 from ezber_pipeline.canonical import sha256_hex
 from ezber_pipeline.config import PipelineConfig, load_config
 from ezber_pipeline.fetch import FetchResult
-from ezber_pipeline.sources import word_level
 
 TESTS_DIR = Path(__file__).resolve().parent
 FIXTURES_DIR = TESTS_DIR / "fixtures"
 REPO_ROOT = TESTS_DIR.parents[1]
 
-FIXTURE_WORD_SOURCE = "fixture_word_level"
+TRANSLITERATION_URL = "https://tanzil.net/trans/en.transliteration"
+TIMING_ARCHIVE_URL = (
+    "https://github.com/cpfair/quran-align/releases/download/"
+    "release-2016-11-24/quran-align-data-2016-11-24.zip"
+)
+
+# Ayahs where the synthetic transliteration splits the first Uthmani word into
+# two tokens (mirrors the real Ye/prefix splits seen in the Tanzil edition).
+MISMATCH_AYAHS = {(2, 21), (7, 19)}
+
+FIXTURE_TIMING_RECITATIONS = [
+    {
+        "asset": "Fake_Alafasy_128kbps.json",
+        "remote_id": "quran-align:Fake_Alafasy_128kbps",
+        "name": "Fake Alafasy",
+        "style_id": "murattal",
+        "style": "Murattal",
+        "qirat": "Hafs 'an Asim",
+        "status": "enabled",
+    },
+    {
+        "asset": "Fake_Husary_64kbps.json",
+        "remote_id": "quran-align:Fake_Husary_64kbps",
+        "name": "Fake Husary",
+        "style_id": "murattal",
+        "style": "Murattal",
+        "qirat": "Hafs 'an Asim",
+        "status": "enabled",
+    },
+]
 
 
 def verse_counts() -> dict[int, int]:
@@ -37,12 +67,25 @@ def synthetic_ayah_text(surah: int, ayah: int) -> str:
     return f"سورة {surah} آية {ayah}"
 
 
+def synthetic_uthmani_words(surah: int, ayah: int) -> list[str]:
+    count = 3 + (surah + ayah) % 5
+    return [f"كلمة{surah}_{ayah}_{index}" for index in range(count)]
+
+
+def synthetic_transliteration_line(surah: int, ayah: int) -> str:
+    tokens = [f"word{surah}-{ayah}-{index}" for index in range(len(synthetic_uthmani_words(surah, ayah)))]
+    if (surah, ayah) in MISMATCH_AYAHS:
+        tokens = [tokens[0], f"extra{surah}-{ayah}"] + tokens[1:]
+    tokens[0] = tokens[0].replace("word", "w<u>o</u>rd", 1)
+    return " ".join(tokens)
+
+
 def synthetic_translation(surah: int, ayah: int) -> str:
     return f"Translation {surah}:{ayah}"
 
 
 def synthetic_transliteration(surah: int, ayah: int) -> str:
-    return f"Transliteration {surah}:{ayah}"
+    return synthetic_transliteration_line(surah, ayah)
 
 
 def synthetic_verse_keys() -> list[str]:
@@ -65,7 +108,7 @@ def synthetic_tanzil_text_xml() -> bytes:
     for surah, count in sorted(verse_counts().items()):
         surah_element = ET.SubElement(root, "sura", {"index": str(surah), "name": f"سورة-{surah}"})
         for ayah in range(1, count + 1):
-            attributes = {"index": str(ayah), "text": synthetic_ayah_text(surah, ayah)}
+            attributes = {"index": str(ayah), "text": " ".join(synthetic_uthmani_words(surah, ayah))}
             if ayah == 1 and surah not in (1, 9):
                 attributes["bismillah"] = "بسم الله"
             ET.SubElement(surah_element, "aya", attributes)
@@ -132,6 +175,58 @@ def synthetic_tanzil_metadata_xml() -> bytes:
     return ('<?xml version="1.0" encoding="utf-8" ?>\n' + body + "\n").encode("utf-8")
 
 
+def synthetic_transliteration_page() -> bytes:
+    lines = []
+    for surah, count in sorted(verse_counts().items()):
+        for ayah in range(1, count + 1):
+            lines.append(f"{surah}|{ayah}|{synthetic_transliteration_line(surah, ayah)}")
+    header = (REPO_ROOT / "licenses" / "notices" / "tanzil-transliteration-en.transliteration.txt").read_text(
+        encoding="utf-8"
+    )
+    return ("\n".join(lines) + "\n\n" + header).encode("utf-8")
+
+
+def synthetic_quran_align_json(asset_name: str, *, defects: bool = False) -> bytes:
+    """One recitation's timing JSON. `defects` injects repairable bad segments."""
+    items = []
+    for surah, count in sorted(verse_counts().items()):
+        for ayah in range(1, count + 1):
+            words = synthetic_uthmani_words(surah, ayah)
+            segments = []
+            for index in range(len(words)):
+                segments.append([index, index + 1, index * 1000, (index + 1) * 1000])
+            if defects and (surah, ayah) == (1, 1):
+                # reversed first segment and a zero-length second segment
+                segments[0] = [0, 1, 800, 300]
+                segments[1] = [1, 2, 900, 900]
+            if defects and (surah, ayah) == (1, 2):
+                # out-of-range segment clamped to the real word count
+                segments[-1] = [len(words) - 1, len(words) + 3, 5000, 6000]
+            if defects and (surah, ayah) == (2, 21):
+                # no segments at all -> synthesized
+                segments = []
+            items.append(
+                {
+                    "surah": surah,
+                    "ayah": ayah,
+                    "segments": segments,
+                    "stats": {"insertions": 0, "deletions": 0, "transpositions": 0},
+                }
+            )
+    return json.dumps(items).encode("utf-8")
+
+
+def synthetic_quran_align_archive() -> bytes:
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("README", "fixture quran-align package")
+        archive.writestr("LICENSE", "Attribution 4.0 International (fixture)")
+        for recitation in FIXTURE_TIMING_RECITATIONS:
+            defects = recitation["asset"] == FIXTURE_TIMING_RECITATIONS[0]["asset"]
+            archive.writestr(recitation["asset"], synthetic_quran_align_json(recitation["asset"], defects=defects))
+    return buffer.getvalue()
+
+
 def synthetic_timing(preamble: bool, style: str) -> bytes:
     payload: dict[str, Any] = {}
     for surah, count in sorted(verse_counts().items()):
@@ -177,67 +272,6 @@ def synthetic_ia_metadata(item_id: str, styles: dict[str, list[int]]) -> bytes:
     return json.dumps(payload).encode("utf-8")
 
 
-def synthetic_word_level_data(
-    *,
-    reciter_remote_id: str = "fake-reciter-a",
-    variant: str = "murattal",
-    words_per_ayah: int = 2,
-) -> word_level.WordLevelData:
-    """Word transliteration + timing aligned to `synthetic_timing(preamble=False)`."""
-    words: list[word_level.WordToken] = []
-    timings: list[word_level.WordTiming] = []
-    slice_ms = 1000 // words_per_ayah
-    for surah, count in sorted(verse_counts().items()):
-        for ayah in range(1, count + 1):
-            ayah_start = (ayah - 1) * 1000
-            for position in range(1, words_per_ayah + 1):
-                words.append(
-                    word_level.WordToken(
-                        surah=surah,
-                        ayah=ayah,
-                        position=position,
-                        transliteration=f"w{surah}-{ayah}-{position}",
-                    )
-                )
-                timings.append(
-                    word_level.WordTiming(
-                        surah=surah,
-                        ayah=ayah,
-                        position=position,
-                        start_ms=ayah_start + (position - 1) * slice_ms,
-                        end_ms=ayah_start + position * slice_ms,
-                    )
-                )
-    return word_level.WordLevelData(
-        source_id=FIXTURE_WORD_SOURCE,
-        name="Fixture word transliteration",
-        language="en",
-        license_id="cc-by-4.0",
-        license_url="https://creativecommons.org/licenses/by/4.0/",
-        license_evidence_url="https://example.org/fixture-word-source",
-        attribution="Fixture word-level transliteration (test only)",
-        words=words,
-        timing_target=word_level.TimingTarget(reciter_remote_id=reciter_remote_id, variant=variant),
-        timings=timings,
-    )
-
-
-class FakeWordLevelAdapter:
-    source_id = FIXTURE_WORD_SOURCE
-
-    def __init__(self, data: word_level.WordLevelData) -> None:
-        self.data = data
-
-    def fetch(self, fetcher, *, verse_counts):  # noqa: ANN001 - mirrors the protocol
-        return self.data
-
-
-def register_fixture_word_adapter(data: word_level.WordLevelData | None = None) -> word_level.WordLevelData:
-    data = data or synthetic_word_level_data()
-    word_level.register_adapter(FIXTURE_WORD_SOURCE, lambda: FakeWordLevelAdapter(data))
-    return data
-
-
 @dataclass
 class FakeFetcher:
     routes: dict[str, bytes]
@@ -251,7 +285,7 @@ class FakeFetcher:
         if url not in self.routes:
             raise AssertionError(f"FakeFetcher has no route for {url}")
         data = self.routes[url]
-        content_type = "application/json" if url.endswith("json") else "application/xml"
+        content_type = "application/json" if url.endswith(".json") else "application/octet-stream"
         return FetchResult(url, data, content_type, sha256_hex(data), True)
 
     def post_form(self, url: str, form: dict[str, str], *, headers: dict[str, str] | None = None) -> FetchResult:
@@ -263,6 +297,8 @@ def synthetic_corpus(config: PipelineConfig, reciter_specs: list[dict[str, Any]]
     routes: dict[str, bytes] = {}
     routes[config.sources["tanzil_text"].url] = synthetic_tanzil_text_xml()
     routes[config.sources["tanzil_metadata"].url] = synthetic_tanzil_metadata_xml()
+    routes[TRANSLITERATION_URL] = synthetic_transliteration_page()
+    routes[TIMING_ARCHIVE_URL] = synthetic_quran_align_archive()
 
     for spec in reciter_specs:
         item_id = spec["remote_id"]
@@ -276,8 +312,7 @@ def write_synthetic_config(
     config_dir: Path,
     reciter_specs: list[dict[str, Any]],
     *,
-    word_level_enabled: bool = False,
-    word_timing_target: tuple[str, str] | None = None,
+    word_timing_enabled: bool = True,
 ) -> None:
     shutil.copytree(REPO_ROOT / "content-pipeline" / "config", config_dir, dirs_exist_ok=True)
 
@@ -318,35 +353,37 @@ def write_synthetic_config(
     }
     (config_dir / "reciters.json").write_text(json.dumps(reciters, indent=2) + "\n", encoding="utf-8")
 
-    word_level_config = {
+    transliteration = json.loads((config_dir / "transliteration.json").read_text(encoding="utf-8"))
+    transliteration["edition"]["url"] = TRANSLITERATION_URL
+    (config_dir / "transliteration.json").write_text(
+        json.dumps(transliteration, indent=2) + "\n", encoding="utf-8"
+    )
+
+    word_timing = {
         "config_version": 1,
-        "enabled": word_level_enabled,
-        "active_source": FIXTURE_WORD_SOURCE if word_level_enabled else None,
-        "timing_target": (
-            {"reciter_remote_id": word_timing_target[0], "variant": word_timing_target[1]}
-            if word_timing_target
-            else None
-        ),
-        "selection_rule": "test fixture",
-        "candidates": [],
+        "enabled": word_timing_enabled,
+        "source": "quran_align",
+        "release_tag": "release-2016-11-24",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "archive_url": TIMING_ARCHIVE_URL,
+        "license_id": "cc-by-4.0-quran-align",
+        "license_url": "https://creativecommons.org/licenses/by/4.0/",
+        "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "alignment_policy": "fixture",
+        "recitations": [dict(recitation) for recitation in FIXTURE_TIMING_RECITATIONS],
     }
-    (config_dir / "word_level.json").write_text(
-        json.dumps(word_level_config, indent=2) + "\n", encoding="utf-8"
+    (config_dir / "word_timing.json").write_text(
+        json.dumps(word_timing, indent=2) + "\n", encoding="utf-8"
     )
 
 
 def make_temp_config(
     specs: list[dict[str, Any]],
     *,
-    word_level_enabled: bool = False,
-    word_timing_target: tuple[str, str] | None = None,
+    word_timing_enabled: bool = True,
 ) -> tuple[tempfile.TemporaryDirectory, PipelineConfig]:
     temp = tempfile.TemporaryDirectory(prefix="ezber-test-")
-    write_synthetic_config(
-        Path(temp.name) / "config",
-        specs,
-        word_level_enabled=word_level_enabled,
-        word_timing_target=word_timing_target,
-    )
+    write_synthetic_config(Path(temp.name) / "config", specs, word_timing_enabled=word_timing_enabled)
     config = load_config(Path(temp.name) / "config")
     return temp, config

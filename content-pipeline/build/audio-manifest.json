@@ -18,8 +18,8 @@
   ],
   "generated_by": {
     "name": "ezber-content-pipeline",
-    "pipeline_version": "0.2.0",
-    "version": "0.2.0"
+    "pipeline_version": "0.3.0",
+    "version": "0.3.0"
   },
   "pending_reciter_candidates": [
     {
@@ -63,5 +63,174 @@
       "status": "pending_written_confirmation"
     }
   ],
-  "reciters": []
+  "reciters": [],
+  "timing_recitations": [
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mishary Rashid Al-Afasy",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Alafasy_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Abdul Basit Abdul Samad",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Abdul_Basit_Murattal_64kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Abdul Basit Abdul Samad",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Abdul_Basit_Mujawwad_128kbps",
+      "status": "timing_only",
+      "style": "Mujawwad",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Abu Bakr al-Shatri",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Abu_Bakr_Ash-Shaatree_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Hani ar-Rifai",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Hani_Rifai_192kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mahmoud Khalil Al-Husary",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Husary_64kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mahmoud Khalil Al-Husary",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Husary_Muallim_128kbps",
+      "status": "timing_only",
+      "style": "Muallim",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mohamed Siddiq al-Minshawi",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Minshawy_Murattal_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mohamed Siddiq al-Minshawi",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Minshawy_Mujawwad_192kbps",
+      "status": "timing_only",
+      "style": "Mujawwad",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mohamed al-Tablawi",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Mohammad_al_Tablaway_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Saud Al-Shuraim",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Saood_ash-Shuraym_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    }
+  ],
+  "word_timing": {
+    "alignment_policy": "quran-align word indices refer to the Tanzil Uthmani text split on spaces (N words). Ezber words are the Tanzil transliteration tokens (M tokens). Per ayah the pipeline repairs the released segments into a non-decreasing piecewise-linear time function f over word positions, aligns tokens to words monotonically by rounding the proportional boundary j*M/N to the nearest token index (so a token never crosses a word boundary; M == N is the identity), then splits each word's span across its tokens by token length (or gives a token spanning several words the union of their spans). Malformed segments are repaired deterministically (reverse start/end swapped, zero-length and out-of-range segments dropped, word-range overlaps clamped, time inversions flattened, uncovered words interpolated between neighbouring aligned words, whole ayahs without segments synthesised from the recitation average word duration) and every repair is counted in the manifest.",
+    "excluded": [
+      {
+        "asset": "Abdurrahmaan_As-Sudais_192kbps.json",
+        "reason": "The 2016-11-24 release ships this file as a three-line align-tool crash log instead of JSON (sha256 53469c4267c51661804dd4eba81c3dada40022a2d9ebd0d55b1dc3a4c9fcd9f4). It cannot be parsed and is excluded until an upstream replacement exists.",
+        "remote_id": "quran-align:Abdurrahmaan_As-Sudais_192kbps"
+      }
+    ],
+    "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+    "release_tag": "release-2016-11-24",
+    "source": "quran_align"
+  }
 }

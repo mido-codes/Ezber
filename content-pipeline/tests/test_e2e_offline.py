@@ -35,6 +35,16 @@ RECITER_SPECS = [
 ]
 
 
+def expected_word_count() -> int:
+    total = 0
+    for surah, count in helpers.verse_counts().items():
+        for ayah in range(1, count + 1):
+            total += len(helpers.synthetic_uthmani_words(surah, ayah))
+            if (surah, ayah) in helpers.MISMATCH_AYAHS:
+                total += 1
+    return total
+
+
 class OfflineBuildTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory(prefix="ezber-e2e-")
@@ -66,16 +76,27 @@ class OfflineBuildTests(unittest.TestCase):
     def test_full_build_is_valid_and_deterministic(self) -> None:
         lock_path = self.root / "source-lock.json"
         bundle, first = self._build("out1", lock_path)
+        words = expected_word_count()
+        audio_segments = 2 * 6236
+        timing_segments = len(helpers.FIXTURE_TIMING_RECITATIONS) * (6236 + words)
         self.assertEqual(len(bundle.surahs), 114)
         self.assertEqual(len(bundle.ayahs), 6236)
-        self.assertEqual(len(bundle.words), 0)
-        self.assertEqual(len(bundle.reciters), 2)
-        self.assertEqual(len(bundle.audio_files), 228)
-        self.assertEqual(len(bundle.segments), 12472)
+        self.assertEqual(len(bundle.words), words)
+        self.assertEqual(len(bundle.transliterations), 1)
+        self.assertEqual(len(bundle.transliteration_rows), 6236)
         self.assertEqual(len(bundle.translations), 0)
-        self.assertEqual(len(bundle.transliterations), 0)
+        self.assertEqual(len(bundle.reciters), 2 + len(helpers.FIXTURE_TIMING_RECITATIONS))
+        self.assertEqual(len(bundle.audio_files), 228)
+        self.assertEqual(len(bundle.segments), audio_segments + timing_segments)
         self.assertEqual(bundle.content_mode, "offline-redistributable")
         self.assertTrue(lock_path.exists())
+
+        # Token-count mismatches keep text_uthmani NULL instead of guessing.
+        mismatch_ayah_id = next(ayah.id for ayah in bundle.ayahs if ayah.verse_key == "2:21")
+        mismatch_words = [word for word in bundle.words if word.ayah_id == mismatch_ayah_id]
+        self.assertGreater(len(mismatch_words), 1)
+        self.assertTrue(all(word.text_uthmani is None for word in mismatch_words))
+        self.assertTrue(any(word.text_uthmani for word in bundle.words))
 
         _, second = self._build("out2", lock_path)
         self.assertEqual(first.database_sha256, second.database_sha256)
@@ -91,29 +112,13 @@ class OfflineBuildTests(unittest.TestCase):
                 f"artifact {name} differs between identical builds",
             )
 
-    @mock.patch.dict(os.environ, {"SOURCE_DATE_EPOCH": "1700000000"})
-    def test_word_level_adapter_populates_words_and_timings(self) -> None:
-        helpers.register_fixture_word_adapter()
-        helpers.write_synthetic_config(
-            self.root / "word-config",
-            RECITER_SPECS,
-            word_level_enabled=True,
-            word_timing_target=("fake-reciter-a", "murattal"),
-        )
-        config = load_config(self.root / "word-config")
-        lock_path = self.root / "word-lock.json"
-        lock = LockBook(lock_path)
-        bundle = build_bundle(config, self.fetcher, lock)
-        ensure_valid(bundle, config)
-
-        self.assertEqual(len(bundle.words), 6236 * 2)
-        self.assertEqual(len(bundle.transliterations), 1)
-        self.assertEqual(len(bundle.transliteration_rows), 6236)
-        self.assertEqual(len(bundle.segments), 12472 + 6236 * 2)
-        word_assets = [asset for asset in bundle.assets if asset.kind == "word_transliteration"]
-        self.assertEqual(len(word_assets), 1)
-        self.assertEqual(word_assets[0].details["words"], 6236 * 2)
-        self.assertTrue(any(segment.word_index == 1 for segment in bundle.segments))
+    def test_repaired_timings_are_recorded(self) -> None:
+        bundle = build_bundle(self.config, self.fetcher, LockBook(self.root / "lock2.json"))
+        detail = bundle.source_facts["word_timing_recitations_detail"]
+        first = detail[0]["alignment_repairs"]
+        self.assertGreaterEqual(first["reversed_start_end"], 1)
+        self.assertGreaterEqual(first["zero_length"], 1)
+        self.assertGreaterEqual(first["synthesized_ayahs"], 1)
 
     def test_lock_detects_upstream_change(self) -> None:
         lock_path = self.root / "source-lock.json"

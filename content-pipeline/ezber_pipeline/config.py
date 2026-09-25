@@ -44,7 +44,8 @@ class PipelineConfig:
     reciters: list[dict[str, Any]] = field(default_factory=list)
     catalog_policy: dict[str, Any] = field(default_factory=dict)
     fallback_sources: list[dict[str, Any]] = field(default_factory=list)
-    word_level: dict[str, Any] = field(default_factory=dict)
+    transliteration: dict[str, Any] = field(default_factory=dict)
+    word_timing: dict[str, Any] = field(default_factory=dict)
     licenses: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @property
@@ -90,6 +91,13 @@ class PipelineConfig:
     def enabled_reciters(self) -> list[dict[str, Any]]:
         return [reciter for reciter in self.reciters if reciter.get("enabled", False)]
 
+    def enabled_timing_recitations(self) -> list[dict[str, Any]]:
+        return [
+            recitation
+            for recitation in self.word_timing.get("recitations", [])
+            if recitation.get("status") == "enabled"
+        ]
+
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
@@ -134,7 +142,8 @@ def load_config(config_dir: Path | None = None) -> PipelineConfig:
         )
 
     reciter_doc = load_json(str(config_dir / "reciters.json"))
-    word_level = load_json(str(config_dir / "word_level.json"))
+    transliteration = load_json(str(config_dir / "transliteration.json"))
+    word_timing = load_json(str(config_dir / "word_timing.json"))
     licenses = load_licenses()
 
     config = PipelineConfig(
@@ -144,7 +153,8 @@ def load_config(config_dir: Path | None = None) -> PipelineConfig:
         reciters=reciter_doc.get("reciters", []),
         catalog_policy=reciter_doc.get("catalog_policy", {}),
         fallback_sources=reciter_doc.get("fallback_sources", []),
-        word_level=word_level,
+        transliteration=transliteration,
+        word_timing=word_timing,
         licenses=licenses,
     )
     validate_config(config)
@@ -200,13 +210,48 @@ def validate_config(config: PipelineConfig) -> None:
                     f"reciter {reciter['remote_id']!r} default_bitrate not in style {style['id']!r} bitrates",
                 )
 
-    word_level = config.word_level
-    _require(word_level.get("config_version") == 1, "unsupported word_level.json config_version")
-    if word_level.get("enabled", False):
-        _require(bool(word_level.get("active_source")), "word_level.enabled needs active_source")
-        configured_license = word_level.get("license_id")
-        if configured_license:
+    _require(config.transliteration.get("config_version") == 1, "unsupported transliteration.json config_version")
+    edition = config.transliteration.get("edition", {})
+    for field_name in (
+        "resource_id",
+        "name",
+        "language",
+        "url",
+        "license_id",
+        "license_url",
+        "license_evidence_url",
+        "attribution",
+    ):
+        _require(bool(edition.get(field_name)), f"transliteration edition missing {field_name!r}")
+    _require(
+        edition.get("license_id") in known_license_ids,
+        f"transliteration edition references unknown license {edition.get('license_id')!r}",
+    )
+
+    word_timing = config.word_timing
+    _require(word_timing.get("config_version") == 1, "unsupported word_timing.json config_version")
+    recitations = word_timing.get("recitations", [])
+    enabled = [recitation for recitation in recitations if recitation.get("status") == "enabled"]
+    if word_timing.get("enabled", False):
+        _require(bool(enabled), "word_timing.enabled is true but no recitation has status 'enabled'")
+        for field_name in ("source", "archive_url", "license_id", "license_url", "license_evidence_url", "attribution"):
+            _require(bool(word_timing.get(field_name)), f"word_timing missing {field_name!r}")
+        _require(
+            word_timing["license_id"] in known_license_ids,
+            f"word_timing references unknown license {word_timing['license_id']!r}",
+        )
+        for recitation in recitations:
+            for field_name in ("asset", "remote_id", "name", "style_id", "style", "status"):
+                _require(
+                    bool(recitation.get(field_name)),
+                    f"word_timing recitation {recitation.get('asset', '?')!r} missing {field_name!r}",
+                )
             _require(
-                configured_license in known_license_ids,
-                f"word-level source references unknown license {configured_license!r}",
+                recitation["status"] in ("enabled", "excluded"),
+                f"word_timing recitation {recitation['remote_id']!r} has unknown status",
             )
+            if recitation["status"] == "excluded":
+                _require(
+                    bool(recitation.get("excluded_reason")),
+                    f"excluded recitation {recitation['remote_id']!r} needs excluded_reason",
+                )

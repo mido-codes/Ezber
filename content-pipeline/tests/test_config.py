@@ -7,7 +7,6 @@ from pathlib import Path
 
 from ezber_pipeline.config import load_config
 from ezber_pipeline.errors import ConfigError
-from ezber_pipeline.sources import word_level
 from tests import helpers
 from tests.test_e2e_offline import RECITER_SPECS
 
@@ -29,8 +28,16 @@ class ConfigTests(unittest.TestCase):
         config = load_config()
         self.assertEqual(config.content_policy["mode"], "offline-redistributable")
         self.assertEqual(config.enabled_reciters(), [])
-        self.assertFalse(config.word_level["enabled"])
-        self.assertTrue(all(not fallback["enabled"] for fallback in config.fallback_sources))
+        self.assertTrue(config.word_timing["enabled"])
+        self.assertEqual(len(config.enabled_timing_recitations()), 11)
+        excluded = [
+            recitation
+            for recitation in config.word_timing["recitations"]
+            if recitation["status"] == "excluded"
+        ]
+        self.assertEqual(len(excluded), 1)
+        self.assertTrue(excluded[0]["excluded_reason"])
+        self.assertEqual(config.transliteration["edition"]["resource_id"], "tanzil.en.transliteration")
 
     def test_enabled_fallback_is_rejected(self) -> None:
         def mutate(document):
@@ -48,19 +55,32 @@ class ConfigTests(unittest.TestCase):
         with self.assertRaises(ConfigError):
             load_config(self.config_dir)
 
-    def test_enabled_word_level_source_without_adapter_fails(self) -> None:
+    def test_translation_license_must_exist(self) -> None:
         def mutate(document):
-            document["enabled"] = True
-            document["active_source"] = "not_registered"
+            document["edition"]["license_id"] = "not-in-registry"
 
-        self._rewrite("word_level.json", mutate)
-        config = load_config(self.config_dir)
+        self._rewrite("transliteration.json", mutate)
         with self.assertRaises(ConfigError):
-            word_level.resolve_adapter(config.word_level)
+            load_config(self.config_dir)
 
-    def test_disabled_word_level_resolves_to_none(self) -> None:
-        config = load_config(self.config_dir)
-        self.assertIsNone(word_level.resolve_adapter(config.word_level))
+    def test_word_timing_requires_an_enabled_recitation(self) -> None:
+        def mutate(document):
+            for recitation in document["recitations"]:
+                recitation["status"] = "excluded"
+                recitation["excluded_reason"] = "test"
+
+        self._rewrite("word_timing.json", mutate)
+        with self.assertRaises(ConfigError):
+            load_config(self.config_dir)
+
+    def test_word_timing_excluded_entries_need_a_reason(self) -> None:
+        def mutate(document):
+            document["recitations"][0]["status"] = "excluded"
+            document["recitations"][0].pop("excluded_reason", None)
+
+        self._rewrite("word_timing.json", mutate)
+        with self.assertRaises(ConfigError):
+            load_config(self.config_dir)
 
 
 if __name__ == "__main__":

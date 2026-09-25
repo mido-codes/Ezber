@@ -15,21 +15,24 @@ or notes, and the user DB stays small enough to back up or sync.
 - `surahs` (114) and `ayahs` (6236): Tanzil text verbatim, plus `verse_key`
   (`"55:3"`) as the stable cross-dataset identity, and juz/hizb/page/sajdah
   metadata derived from Tanzil's `quran-data.xml`.
-- `words`: word-level transliteration rows for highlighting. **Empty in the M0
-  bundle** because no redistributable word source has cleared rights; the
-  pipeline adapter is in place and off (CD-6). `transliteration` is NOT NULL
-  whenever a row exists, because it is the primary reading surface.
+- `words`: word-level transliteration tokens, produced by splitting each
+  Tanzil transliteration ayah line on whitespace (captain decision).
+  `text_uthmani` is set only when the token count equals the Uthmani
+  space-split word count, otherwise NULL (369 ayahs); `transliteration` is
+  always present because it is the primary reading surface.
 - `reciters`, `audio_files`, `segments`: recitation catalog and playback data.
-  `audio_files.variant` is the style id (`murattal`, `mujawwad`); `bitrate`
-  distinguishes encodings. `segments` is keyed by
-  `(reciter_id, variant, ayah_id, word_index)` and **`word_index = 0` means the
-  whole-ayah range** from chapter timing; `word_index >= 1` is a word range and
-  requires matching `words` rows. Audio catalog entries stay disabled until
-  Quran Foundation confirms them in writing (CD-2).
+  Audio entries stay disabled until Quran Foundation confirms them in writing
+  (CD-2), so `audio_files` is currently empty; `reciters` currently carries the
+  11 timing-only cpfair/quran-align recitations (`source = "quran_align"`,
+  `status = "timing_only"`). `segments` is keyed by
+  `(reciter_id, variant, ayah_id, word_index)` and **`word_index = 0` is the
+  whole-ayah range while `word_index >= 1` is a word range** matching `words`
+  positions. quran-align times are offsets within each ayah's own audio file,
+  not within a chapter file.
 - `translations` / `translation_rows`: reserved and empty — the English
   translation was dropped by captain decision 2026-09-25.
-- `transliterations` / `transliteration_rows`: the verse-level line, filled
-  together with `words` when a word-level adapter is enabled.
+- `transliterations` / `transliteration_rows`: the Tanzil English
+  transliteration edition (`tanzil.en.transliteration`), one row per ayah.
 - `content_meta`: schema version, pipeline version, `content_mode`
   (`offline-redistributable`), the logical digest and other build facts. No
   timestamps.

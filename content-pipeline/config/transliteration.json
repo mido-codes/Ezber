@@ -1,0 +1,17 @@
+{
+  "config_version": 1,
+  "edition": {
+    "resource_id": "tanzil.en.transliteration",
+    "name": "Transliteration",
+    "author": "Tanzil Project",
+    "language": "en",
+    "source": "tanzil",
+    "url": "https://tanzil.net/trans/en.transliteration",
+    "license_id": "tanzil-transliteration-permission",
+    "license_url": "https://tanzil.net/trans/",
+    "license_evidence_url": "https://tanzil.net/docs/Translations_Resources",
+    "attribution": "Transliteration: Tanzil Project (https://tanzil.net), used with written permission.",
+    "provenance_notice_file": "licenses/notices/tanzil-transliteration-en.transliteration.txt",
+    "word_derivation": "The ayah line is split on whitespace to produce one WordToken per position; this is the captain-mandated derivation (inbox 002, 2026-09-25)."
+  }
+}

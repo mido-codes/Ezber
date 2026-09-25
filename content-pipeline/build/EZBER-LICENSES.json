@@ -13,12 +13,26 @@
       "license_id": "cc-by-3.0",
       "license_url": "https://creativecommons.org/licenses/by/3.0/",
       "text": "Quran text (Uthmani, version 1.1): Tanzil Project (https://tanzil.net), licensed CC BY 3.0. Served verbatim and unmodified."
+    },
+    {
+      "asset_id": "transliteration:tanzil.en.transliteration",
+      "kind": "transliteration",
+      "license_id": "tanzil-transliteration-permission",
+      "license_url": "https://tanzil.net/trans/",
+      "text": "Transliteration: Tanzil Project (https://tanzil.net), used with written permission."
+    },
+    {
+      "asset_id": "word-timing:quran-align:Abdul_Basit_Mujawwad_128kbps",
+      "kind": "word_timing",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "text": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0."
     }
   ],
   "credits_version": 1,
   "generated_by": {
     "name": "ezber-content-pipeline",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "licenses": [
     {
@@ -31,6 +45,27 @@
       ],
       "spdx": "CC-BY-3.0",
       "url": "https://creativecommons.org/licenses/by/3.0/"
+    },
+    {
+      "id": "cc-by-4.0-quran-align",
+      "name": "Creative Commons Attribution 4.0 International (cpfair/quran-align data)",
+      "obligations": [
+        "Credit Collin Fair / cpfair/quran-align and link the repository and the CC BY 4.0 license in the app credits.",
+        "State that the pipeline drops or repairs malformed entries from the released timing files and interpolates uncovered words; the manifest records the repair counts per recitation."
+      ],
+      "spdx": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": "tanzil-transliteration-permission",
+      "name": "Tanzil English transliteration - use cleared by written permission",
+      "obligations": [
+        "Credit Tanzil Project and link https://tanzil.net in the app credits.",
+        "Keep the edition verbatim; the pipeline only strips the page's presentation markup and splits the text into word tokens for display.",
+        "Keep the written grant on file alongside the content manifest for store review."
+      ],
+      "spdx": "LicenseRef-Tanzil-WrittenPermission",
+      "url": "https://tanzil.net/trans/"
     }
   ]
 }

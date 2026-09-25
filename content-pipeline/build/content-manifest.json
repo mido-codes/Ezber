@@ -45,6 +45,417 @@
         "url": "https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=xml&agree=true",
         "version": "1.1"
       }
+    },
+    {
+      "asset_id": "transliteration:tanzil.en.transliteration",
+      "description": "English transliteration: Transliteration (tanzil.en.transliteration)",
+      "details": {
+        "provenance_header": "# --------------------------------------------------------------------\n#\n#  Quran Translation\n#  Name: Transliteration\n#  Translator: English Transliteration\n#  Language: English\n#  ID: en.transliteration\n#  Last Update: September 6, 2010\n#  Source: Tanzil.net\n#\n# --------------------------------------------------------------------",
+        "resource_id": "tanzil.en.transliteration",
+        "rows": 6236,
+        "tokens": 77800,
+        "written_permission": "granted (captain's records, recorded in licenses/registry.json)"
+      },
+      "kind": "transliteration",
+      "license": {
+        "attribution": "Transliteration: Tanzil Project (https://tanzil.net), used with written permission.",
+        "evidence_url": "https://tanzil.net/docs/Translations_Resources",
+        "id": "tanzil-transliteration-permission",
+        "url": "https://tanzil.net/trans/"
+      },
+      "source": {
+        "bytes": 1044894,
+        "digest": null,
+        "name": "tanzil",
+        "sha256": "sha256:8c20d95e484534e921cd2e0d2546aab7f5300090c0bd76697095b3ca1db1e01d",
+        "url": "https://tanzil.net/trans/en.transliteration",
+        "version": "September 6, 2010"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Abdul_Basit_Mujawwad_128kbps",
+      "description": "quran-align word timings: Abdul Basit Abdul Samad (Mujawwad)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 4,
+          "reversed_start_end": 22,
+          "synthesized_ayahs": 0,
+          "time_inversions": 0,
+          "word_overlap": 0,
+          "zero_length": 4
+        },
+        "asset": "Abdul_Basit_Mujawwad_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:44035a30a535a6b4af548603b9bc134383e18a4580952d24535a2b0340f56558",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Abdul_Basit_Mujawwad_128kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Abdul_Basit_Murattal_64kbps",
+      "description": "quran-align word timings: Abdul Basit Abdul Samad (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 2,
+          "reversed_start_end": 17,
+          "synthesized_ayahs": 0,
+          "time_inversions": 1,
+          "word_overlap": 0,
+          "zero_length": 3
+        },
+        "asset": "Abdul_Basit_Murattal_64kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:5e884ac55832ec33c9339ef38267081297513edf6225e6f86d64e04b9e2a25fe",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Abdul_Basit_Murattal_64kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Abu_Bakr_Ash-Shaatree_128kbps",
+      "description": "quran-align word timings: Abu Bakr al-Shatri (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 1,
+          "reversed_start_end": 20,
+          "synthesized_ayahs": 0,
+          "time_inversions": 1,
+          "word_overlap": 0,
+          "zero_length": 8
+        },
+        "asset": "Abu_Bakr_Ash-Shaatree_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:633791c166d0dcf00e8654e2d21f926661fbbe25b89825dbd571b9463f1eaff5",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Abu_Bakr_Ash-Shaatree_128kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Alafasy_128kbps",
+      "description": "quran-align word timings: Mishary Rashid Al-Afasy (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 2,
+          "reversed_start_end": 10,
+          "synthesized_ayahs": 0,
+          "time_inversions": 1,
+          "word_overlap": 0,
+          "zero_length": 11
+        },
+        "asset": "Alafasy_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:55c1353848d8f3140abab72bb5d1d4533476a8219f6241079a425d232f001eb7",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Alafasy_128kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Hani_Rifai_192kbps",
+      "description": "quran-align word timings: Hani ar-Rifai (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 0,
+          "reversed_start_end": 13,
+          "synthesized_ayahs": 0,
+          "time_inversions": 2,
+          "word_overlap": 0,
+          "zero_length": 6
+        },
+        "asset": "Hani_Rifai_192kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:3215d0a9038d7eae695018b1bc5af05cea1cb12bdc0420fa6c5c8a320ec3b557",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Hani_Rifai_192kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Husary_64kbps",
+      "description": "quran-align word timings: Mahmoud Khalil Al-Husary (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 2,
+          "reversed_start_end": 12,
+          "synthesized_ayahs": 0,
+          "time_inversions": 3,
+          "word_overlap": 0,
+          "zero_length": 3
+        },
+        "asset": "Husary_64kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:4ccb674446203398531a5cc034ac2ca35e3c4632a2b881c16562fa7b185e7d2a",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Husary_64kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Husary_Muallim_128kbps",
+      "description": "quran-align word timings: Mahmoud Khalil Al-Husary (Muallim)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 4,
+          "reversed_start_end": 8,
+          "synthesized_ayahs": 0,
+          "time_inversions": 0,
+          "word_overlap": 0,
+          "zero_length": 3
+        },
+        "asset": "Husary_Muallim_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:3719fb5c482d7db7086b4a81cdb6f114aa71979899917a74e6c8ae5bec684f5f",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Husary_Muallim_128kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Minshawy_Mujawwad_192kbps",
+      "description": "quran-align word timings: Mohamed Siddiq al-Minshawi (Mujawwad)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 2,
+          "reversed_start_end": 3,
+          "synthesized_ayahs": 1,
+          "time_inversions": 0,
+          "word_overlap": 0,
+          "zero_length": 0
+        },
+        "asset": "Minshawy_Mujawwad_192kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:449766fca871ed3babb26665790eb2a0322d6eb51273b20dff4e1bcc44c46a76",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Minshawy_Mujawwad_192kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Minshawy_Murattal_128kbps",
+      "description": "quran-align word timings: Mohamed Siddiq al-Minshawi (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 4,
+          "reversed_start_end": 11,
+          "synthesized_ayahs": 0,
+          "time_inversions": 4,
+          "word_overlap": 0,
+          "zero_length": 8
+        },
+        "asset": "Minshawy_Murattal_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:5fb1f51734790ce3a477c2c413897028ebf5d60a0e369c527a2c779ee0dd206d",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Minshawy_Murattal_128kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Mohammad_al_Tablaway_128kbps",
+      "description": "quran-align word timings: Mohamed al-Tablawi (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 4,
+          "reversed_start_end": 12,
+          "synthesized_ayahs": 0,
+          "time_inversions": 1,
+          "word_overlap": 0,
+          "zero_length": 6
+        },
+        "asset": "Mohammad_al_Tablaway_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:98563051769196e75d77d8e31f0d3338cd8e1fdd8993fb20da6febb249694a7f",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Mohammad_al_Tablaway_128kbps.json",
+        "version": "release-2016-11-24"
+      }
+    },
+    {
+      "asset_id": "word-timing:quran-align:Saood_ash-Shuraym_128kbps",
+      "description": "quran-align word timings: Saud Al-Shuraim (Murattal)",
+      "details": {
+        "alignment_repairs": {
+          "out_of_range": 0,
+          "reversed_start_end": 28,
+          "synthesized_ayahs": 1,
+          "time_inversions": 1,
+          "word_overlap": 0,
+          "zero_length": 15
+        },
+        "asset": "Saood_ash-Shuraym_128kbps.json",
+        "ayahs": 6236,
+        "note": "Times are offsets within each ayah's own audio file (quran-align reference), not within a chapter file.",
+        "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+        "whole_ayah_segments": 6236,
+        "word_segments": 77800
+      },
+      "kind": "word_timing",
+      "license": {
+        "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+        "evidence_url": "https://github.com/cpfair/quran-align#data",
+        "id": "cc-by-4.0-quran-align",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "quran_align",
+        "sha256": "sha256:282fcb950c5c9327f2db8c306e4e054cadf487a45b475ed0034fce65664c1b02",
+        "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip#Saood_ash-Shuraym_128kbps.json",
+        "version": "release-2016-11-24"
+      }
     }
   ],
   "attributions": [
@@ -57,26 +468,42 @@
       "example_asset_id": "quran-text:tanzil-uthmani-1.1",
       "license_id": "cc-by-3.0",
       "text": "Quran text (Uthmani, version 1.1): Tanzil Project (https://tanzil.net), licensed CC BY 3.0. Served verbatim and unmodified."
+    },
+    {
+      "example_asset_id": "transliteration:tanzil.en.transliteration",
+      "license_id": "tanzil-transliteration-permission",
+      "text": "Transliteration: Tanzil Project (https://tanzil.net), used with written permission."
+    },
+    {
+      "example_asset_id": "word-timing:quran-align:Abdul_Basit_Mujawwad_128kbps",
+      "license_id": "cc-by-4.0-quran-align",
+      "text": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0."
     }
   ],
   "bundle": {
     "audio_files": 0,
     "ayahs": 6236,
     "database": {
-      "bytes": 2043904,
+      "bytes": 49950720,
       "file": "ezber-content.sqlite",
-      "logical_digest": "sha256:78e53d0ada55d4a2879f2c8fb7f7a85cd7a5b862c4fefe3bf7fc0ea52571f24f",
-      "sha256": "sha256:dd2258132bfb18e176d6e0db0b31a8fd8b86837c6b89e1bd2c195847ac8d70d5"
+      "logical_digest": "sha256:696bcb8f1a548cd6391ff4ff1e76156b6e90c273408b62f429e67c2449d0a8cc",
+      "sha256": "sha256:7ea19f2b12e461809621937b1ca3042429f39ad3b8cc424ad402c76fb50ff02c"
     },
-    "reciters": 0,
-    "segments": 0,
+    "reciters": 11,
+    "segments": 924396,
     "surahs": 114,
     "translations": [],
-    "transliterations": [],
-    "words": 0
+    "transliterations": [
+      {
+        "language": "en",
+        "name": "Transliteration",
+        "resource_id": "tanzil.en.transliteration"
+      }
+    ],
+    "words": 77800
   },
   "content_policy": {
-    "description": "The app is fully offline and ships only content that may be redistributed inside it. There is no Quran Foundation content, no runtime Content API access, no OAuth2/token-broker path and no English translation in this bundle. Only Tanzil text and (once rights-cleared) recitation audio and transliteration are eligible.",
+    "description": "The app is fully offline and ships only content that may be redistributed inside it: Tanzil text and metadata, the Tanzil English transliteration (written permission), and cpfair/quran-align CC BY 4.0 word timings. There is no Quran Foundation content, no runtime Content API access, no OAuth2/token-broker path and no English translation in this bundle. Recitation audio stays disabled until Quran Foundation confirms sources in writing.",
     "mode": "offline-redistributable",
     "quran_foundation_enabled": false,
     "translations_enabled": false
@@ -92,9 +519,9 @@
   },
   "generated_by": {
     "name": "ezber-content-pipeline",
-    "pipeline_version": "0.2.0",
+    "pipeline_version": "0.3.0",
     "schema_version": 1,
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
   "licenses": {
     "cc-by-3.0": {
@@ -110,6 +537,33 @@
       "redistribution": "allowed_with_conditions",
       "spdx": "CC-BY-3.0",
       "url": "https://creativecommons.org/licenses/by/3.0/"
+    },
+    "cc-by-4.0-quran-align": {
+      "attribution_required": true,
+      "commercial_use": "allowed",
+      "name": "Creative Commons Attribution 4.0 International (cpfair/quran-align data)",
+      "notice_required": false,
+      "obligations": [
+        "Credit Collin Fair / cpfair/quran-align and link the repository and the CC BY 4.0 license in the app credits.",
+        "State that the pipeline drops or repairs malformed entries from the released timing files and interpolates uncovered words; the manifest records the repair counts per recitation."
+      ],
+      "redistribution": "allowed",
+      "spdx": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "tanzil-transliteration-permission": {
+      "attribution_required": true,
+      "commercial_use": "permission_granted",
+      "name": "Tanzil English transliteration - use cleared by written permission",
+      "notice_required": false,
+      "obligations": [
+        "Credit Tanzil Project and link https://tanzil.net in the app credits.",
+        "Keep the edition verbatim; the pipeline only strips the page's presentation markup and splits the text into word tokens for display.",
+        "Keep the written grant on file alongside the content manifest for store review."
+      ],
+      "redistribution": "allowed_with_conditions",
+      "spdx": "LicenseRef-Tanzil-WrittenPermission",
+      "url": "https://tanzil.net/trans/"
     }
   },
   "manifest_version": 1

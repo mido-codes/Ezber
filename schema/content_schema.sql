@@ -61,12 +61,12 @@ CREATE INDEX idx_ayahs_surah ON ayahs (surah_id, ayah);
 CREATE INDEX idx_ayahs_juz ON ayahs (juz);
 CREATE INDEX idx_ayahs_page ON ayahs (page);
 
--- Word-level rows for highlighting. Populated by the configured word-level
--- adapter (see content-pipeline/config/word_level.json and
--- sources/word_level.py). The adapter is disabled until a bundleable,
--- rights-cleared word transliteration + per-word timing source exists, so the
--- M0 bundle leaves this table empty. transliteration is required because it is
--- the primary reading surface for the verse line.
+-- Word-level rows populated from the Tanzil English transliteration: each
+-- whitespace-separated token of the ayah line becomes one row (captain decision
+-- 2026-09-25). text_uthmani is set only when the transliteration token count
+-- equals the Uthmani space-split word count, so mismatched ayahs keep NULL
+-- rather than a wrong word. transliteration is required because it is the
+-- primary reading surface for the verse line.
 CREATE TABLE words (
   id              INTEGER PRIMARY KEY,
   ayah_id         INTEGER NOT NULL REFERENCES ayahs(id),
@@ -129,7 +129,7 @@ CREATE TABLE segments (
   start_ms    INTEGER NOT NULL CHECK (start_ms >= 0),
   end_ms      INTEGER NOT NULL CHECK (end_ms > start_ms),
   PRIMARY KEY (reciter_id, variant, ayah_id, word_index)
-);
+) WITHOUT ROWID;
 
 CREATE INDEX idx_segments_ayah ON segments (ayah_id);
 

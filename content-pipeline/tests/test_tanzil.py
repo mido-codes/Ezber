@@ -14,7 +14,7 @@ class TanzilTests(unittest.TestCase):
         self.assertEqual(len(text.surahs), 114)
         total = sum(len(surah.ayahs) for surah in text.surahs)
         self.assertEqual(total, 6236)
-        self.assertEqual(text.surahs[0].ayahs[0].text, helpers.synthetic_ayah_text(1, 1))
+        self.assertEqual(text.surahs[0].ayahs[0].text, " ".join(helpers.synthetic_uthmani_words(1, 1)))
         self.assertEqual(text.surahs[0].ayahs[0].bismillah, None)
         self.assertEqual(text.surahs[1].ayahs[0].bismillah, "بسم الله")
 

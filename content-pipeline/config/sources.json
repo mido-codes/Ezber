@@ -2,11 +2,11 @@
   "config_version": 2,
   "pipeline": {
     "name": "ezber-content-pipeline",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "schema_version": 1,
     "expected_surah_count": 114,
     "expected_ayah_count": 6236,
-    "user_agent": "ezber-content-pipeline/0.2.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
+    "user_agent": "ezber-content-pipeline/0.3.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
     "http": {
       "timeout_seconds": 60,
       "retries": 3,
@@ -23,7 +23,7 @@
   },
   "content_policy": {
     "mode": "offline-redistributable",
-    "description": "The app is fully offline and ships only content that may be redistributed inside it. There is no Quran Foundation content, no runtime Content API access, no OAuth2/token-broker path and no English translation in this bundle. Only Tanzil text and (once rights-cleared) recitation audio and transliteration are eligible.",
+    "description": "The app is fully offline and ships only content that may be redistributed inside it: Tanzil text and metadata, the Tanzil English transliteration (written permission), and cpfair/quran-align CC BY 4.0 word timings. There is no Quran Foundation content, no runtime Content API access, no OAuth2/token-broker path and no English translation in this bundle. Recitation audio stays disabled until Quran Foundation confirms sources in writing.",
     "translations_enabled": false,
     "quran_foundation_enabled": false
   },
