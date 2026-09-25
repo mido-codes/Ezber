@@ -22,11 +22,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +54,14 @@ import app.ezber.android.ui.ScreenScaffold
  */
 @Composable
 fun NotesScreen(app: AppEnvironment) {
+    // Notes live in the user database and work offline; the catalogue only
+    // adds surah names to the rows.
+    LaunchedEffect(app.contentRepository) {
+        app.contentRepository?.ensureIndex()
+    }
+
     val revision = app.dataRevision
+    val contentRevision = app.contentRepository?.state?.revision ?: 0
     var searchText by rememberSaveable { mutableStateOf("") }
     val notes = remember(revision, searchText) {
         if (searchText.isBlank()) {
@@ -107,7 +114,9 @@ fun NotesScreen(app: AppEnvironment) {
                     items(notes, key = { it.id }) { note ->
                         NoteRow(
                             note = note,
-                            surahName = app.content.surah(note.verseId.surah)?.nameLatin,
+                            surahName = remember(contentRevision, note.verseKey) {
+                                app.content.surah(note.verseId.surah)?.nameLatin
+                            },
                             onClick = {
                                 editingNote = note
                                 editorOpen = true
@@ -205,9 +214,10 @@ private fun NoteEditorDialog(
     var surahId by remember { mutableIntStateOf(existing?.verseId?.surah ?: 1) }
     var verseNumber by remember { mutableIntStateOf(existing?.verseId?.number ?: 1) }
 
-    val surah = app.content.surah(surahId)
+    val contentRevision = app.contentRepository?.state?.revision ?: 0
+    val surah = remember(surahId, contentRevision) { app.content.surah(surahId) }
     val verseCount = maxOf(1, surah?.verseCount ?: 1)
-    val allSurahs = remember { app.content.allSurahs() }
+    val allSurahs = remember(contentRevision) { app.content.allSurahs() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -218,15 +228,24 @@ private fun NoteEditorDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (existing == null) {
+                    if (allSurahs.isEmpty()) {
+                        Text(
+                            text = "The surah catalogue has not loaded yet; the note will still save. " +
+                                "Open Settings → Content to refresh.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     DropdownField(
                         label = "Surah",
-                        value = "${surahId}. ${surah?.nameLatin ?: ""}",
+                        value = "$surahId. ${surah?.nameLatin ?: "Surah $surahId"}",
                         options = allSurahs.map { item ->
                             "${item.id}. ${item.nameLatin}" to {
                                 surahId = item.id
                                 verseNumber = 1
                             }
                         },
+                        enabled = allSurahs.isNotEmpty(),
                     )
                     DropdownField(
                         label = "Verse",
@@ -251,23 +270,6 @@ private fun NoteEditorDialog(
                         .fillMaxWidth()
                         .heightIn(min = 120.dp),
                 )
-
-                OutlinedButton(
-                    onClick = {
-                        app.voiceMemo.startRecording()
-                        val memo = app.voiceMemo.stopRecording()
-                        val memoPath = memo?.filePath ?: "no-file"
-                        body = if (body.isBlank()) {
-                            "${Note.VOICE_MEMO_PREFIX} · $memoPath"
-                        } else {
-                            "$body\n\n${Note.VOICE_MEMO_PREFIX} · $memoPath"
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Icon(Icons.Filled.RecordVoiceOver, contentDescription = null)
-                    Text(" Record voice memo (stub)")
-                }
             }
         },
         confirmButton = {

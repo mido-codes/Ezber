@@ -21,6 +21,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -46,15 +47,23 @@ import app.ezber.android.ui.ScreenScaffold
 @Composable
 fun HomeScreen(app: AppEnvironment, navigator: Navigator) {
     val revision = app.dataRevision
+    val contentRevision = app.contentRepository?.state?.revision ?: 0
     val lastPreset = remember(revision) { app.userData.lastUsedPreset() }
     val progress = remember(revision) { app.userData.allProgress() }
     val planState = remember(revision, lastPreset?.id) {
         lastPreset?.let { app.userData.planState(it.id) }
     }
-    val surah = remember(revision, lastPreset?.id) {
+    val surah = remember(revision, contentRevision, lastPreset?.id) {
         lastPreset?.surahId?.let { app.content.surah(it) }
     }
-    val queue = remember(revision, lastPreset?.id) {
+
+    // Warm the last preset's surah file so the Continue card can show where the
+    // listener stopped. The catalogue is fetched by RootView on start.
+    LaunchedEffect(lastPreset?.surahId) {
+        lastPreset?.surahId?.let { app.contentRepository?.ensureSurah(it) }
+    }
+
+    val queue = remember(revision, contentRevision, lastPreset?.id) {
         val preset = lastPreset
         val currentSurah = surah
         if (preset != null && currentSurah != null && preset.surahId != null) {
@@ -88,6 +97,12 @@ fun HomeScreen(app: AppEnvironment, navigator: Navigator) {
                         app.notifyDataChanged()
                         navigator.push(Screen.StudyPlayer(lastPreset.id))
                     },
+                )
+            } else if (lastPreset != null) {
+                PreparingCard(
+                    preset = lastPreset,
+                    error = app.contentRepository?.state?.surahFailures?.get(lastPreset.surahId ?: -1),
+                    onContinue = { navigator.push(Screen.StudyPlayer(lastPreset.id)) },
                 )
             } else {
                 WelcomeCard(onStart = { navigator.push(Screen.SurahPicker) })
@@ -151,6 +166,33 @@ private fun ContinueCard(
             Icon(Icons.Filled.PlayArrow, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text("Continue drill")
+        }
+    }
+}
+
+@Composable
+private fun PreparingCard(preset: Preset, error: String?, onContinue: () -> Unit) {
+    EzberCard {
+        Text(
+            text = "Continue",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = preset.name,
+            style = MaterialTheme.typography.headlineSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            text = error ?: "Fetching this preset's surah…",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Open drill")
         }
     }
 }

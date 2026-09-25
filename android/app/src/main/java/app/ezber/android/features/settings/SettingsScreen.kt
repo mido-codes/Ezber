@@ -10,16 +10,20 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,24 +35,39 @@ import app.ezber.android.AppThemeMode
 import app.ezber.android.CallBehavior
 import app.ezber.android.NavigationBehavior
 import app.ezber.android.R
+import app.ezber.android.content.ContentPhase
 import app.ezber.android.features.reciterpicker.ReciterPickerDialog
+import app.ezber.android.models.Iso8601
 import app.ezber.android.models.TranslationMode
 import app.ezber.android.models.TransliterationStyle
 import app.ezber.android.ui.DropdownField
 import app.ezber.android.ui.EzberCard
 import app.ezber.android.ui.InfoRow
 import app.ezber.android.ui.ScreenScaffold
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
- * Display, audio, language, storage and about. Defaults here feed new presets;
- * the language picker switches the interface locale in MainActivity.
+ * Display, audio, language, content source, storage and about. Defaults here
+ * feed new presets; the language picker switches the interface locale in
+ * MainActivity; the content source card is where the bundle's base URL is set.
  */
 @Composable
 fun SettingsScreen(app: AppEnvironment, onOpenCredits: () -> Unit) {
-    val revision = app.dataRevision
-    var showReciterDialog by remember { mutableStateOf(false) }
     val settings = app.settings
+    val repository = app.contentRepository
+    LaunchedEffect(repository) {
+        repository?.ensureIndex()
+    }
+
+    val scope = rememberCoroutineScope()
+    val sync = repository?.state
+    val contentRevision = sync?.revision ?: 0
+    var baseUrlText by remember { mutableStateOf(settings.contentBaseUrl) }
+    var showReciterDialog by remember { mutableStateOf(false) }
+    val counts = remember(sync, contentRevision) {
+        sync?.counts?.takeIf { it.isNotEmpty() } ?: emptyMap()
+    }
 
     ScreenScaffold(title = stringResource(R.string.title_settings)) { padding ->
         Column(
@@ -147,17 +166,84 @@ fun SettingsScreen(app: AppEnvironment, onOpenCredits: () -> Unit) {
             }
 
             EzberCard {
-                Text("Storage and downloads", style = MaterialTheme.typography.titleMedium)
+                Text("Content source", style = MaterialTheme.typography.titleMedium)
                 Text(
-                    text = "No downloads yet. Downloaded surahs will be listed here.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "The app fetches the grouped web bundle lazily: the index once, " +
+                        "then one surah file (and its timings) when you open it. The default " +
+                        "points at the web dev server on the emulator host.",
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                OutlinedTextField(
+                    value = baseUrlText,
+                    onValueChange = { baseUrlText = it },
+                    label = { Text("Bundle base URL") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Button(
+                    onClick = {
+                        settings.updateContentBaseUrl(baseUrlText)
+                        baseUrlText = settings.contentBaseUrl
+                        scope.launch { repository?.ensureIndex(force = true) }
+                    },
+                    enabled = repository != null && sync?.phase != ContentPhase.LOADING,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Save address and refresh")
+                }
+                OutlinedButton(
+                    onClick = { scope.launch { repository?.ensureIndex(force = true) } },
+                    enabled = repository != null && sync?.phase != ContentPhase.LOADING,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        if (sync?.phase == ContentPhase.LOADING) {
+                            "Refreshing…"
+                        } else {
+                            "Probe the source again"
+                        },
+                    )
+                }
+                if (sync?.lastError != null) {
+                    Text(
+                        text = sync.lastError.orEmpty(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+                InfoRow(
+                    title = "Catalogue",
+                    value = if (sync?.catalogReady == true) "Loaded" else "Not loaded",
+                )
+                InfoRow(title = "Last refresh", value = Iso8601.display(sync?.lastFetchedAt))
+                InfoRow(title = "Cached surahs", value = "${sync?.cachedSurahs?.size ?: 0} of 114")
                 InfoRow(title = "Content store", value = app.contentStoreDescription)
                 InfoRow(title = "User store", value = app.userStoreDescription)
-                OutlinedButton(onClick = {}, enabled = false, modifier = Modifier.fillMaxWidth()) {
-                    Text("Export user data (stub)")
+            }
+
+            EzberCard {
+                Text("Storage", style = MaterialTheme.typography.titleMedium)
+                if (counts.isEmpty()) {
+                    Text(
+                        text = "No content cached yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    InfoRow(title = "Surahs", value = (counts["surahs"] ?: 0).toString())
+                    InfoRow(title = "Ayahs", value = (counts["ayahs"] ?: 0).toString())
+                    InfoRow(title = "Words", value = (counts["words"] ?: 0).toString())
+                    InfoRow(title = "Reciters", value = (counts["reciters"] ?: 0).toString())
+                    InfoRow(title = "Timing rows", value = (counts["segments"] ?: 0).toString())
+                    InfoRow(title = "Audio files", value = (counts["audio_files"] ?: 0).toString())
                 }
+                Text(
+                    text = "Audio downloads are managed by the playback engine; " +
+                        "reciter availability comes from the bundle's audio catalogue.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
 
             EzberCard {
@@ -169,7 +255,14 @@ fun SettingsScreen(app: AppEnvironment, onOpenCredits: () -> Unit) {
                         Icon(Icons.Filled.ChevronRight, contentDescription = null)
                     }
                 }
-                InfoRow(title = "Content", value = "Placeholder data")
+                InfoRow(
+                    title = "Content",
+                    value = if (sync?.catalogReady == true) {
+                        "Bundle ${sync.generatedBy["pipeline_version"] ?: "loaded"}"
+                    } else {
+                        "Not loaded"
+                    },
+                )
             }
         }
     }

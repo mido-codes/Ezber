@@ -52,6 +52,7 @@ import app.ezber.android.AppEnvironment
 import app.ezber.android.R
 import app.ezber.android.models.DrillQueue
 import app.ezber.android.models.TranslationMode
+import app.ezber.android.ui.ContentGate
 import app.ezber.android.ui.EmptyState
 import app.ezber.android.ui.EzberCard
 import app.ezber.android.ui.LocalEzberColors
@@ -69,11 +70,9 @@ fun StudyPlayerScreen(
     onBack: () -> Unit,
 ) {
     val preset = remember(presetId) { app.userData.preset(presetId) }
-    val surah = remember(preset?.surahId) {
-        preset?.surahId?.let { app.content.surah(it) }
-    }
+    val surahId = preset?.surahId
 
-    if (preset == null || surah == null) {
+    if (preset == null || surahId == null) {
         ScreenScaffold(title = stringResource(R.string.title_study_player), onBack = onBack) { padding ->
             EmptyState(
                 icon = Icons.Filled.Warning,
@@ -85,70 +84,107 @@ fun StudyPlayerScreen(
         return
     }
 
-    val queue = remember(preset.id) {
+    ScreenScaffold(title = preset.name, onBack = onBack) { padding ->
+        ContentGate(
+            app = app,
+            surahId = surahId,
+            modifier = Modifier.padding(padding),
+            loadingMessage = "Loading ${app.content.surah(surahId)?.nameLatin ?: "the surah"}…",
+        ) {
+            StudyPlayerBody(app = app, presetId = presetId, onBack = onBack)
+        }
+    }
+}
+
+@Composable
+private fun StudyPlayerBody(app: AppEnvironment, presetId: Long, onBack: () -> Unit) {
+    val preset = remember(presetId) { app.userData.preset(presetId) } ?: return
+    val surah = remember(preset.surahId) {
+        preset.surahId?.let { app.content.surah(it) }
+    }
+    val queue = remember(preset.id, surah) {
+        val current = surah ?: return@remember null
         DrillQueue.build(
             preset = preset,
-            surah = surah,
-            verses = app.content.verses(surah.id, preset.range),
+            surah = current,
+            verses = app.content.verses(current.id, preset.range),
         )
     }
-    val model = remember(preset.id) { StudyPlayerModel(preset, surah, queue, app) }
-    DisposableEffect(preset.id) {
+
+    if (surah == null || queue == null || queue.isEmpty) {
+        EmptyState(
+            icon = Icons.Filled.Warning,
+            title = "No verses available",
+            message = "The cached surah file has no verses in this preset's range. " +
+                "Check Settings → Content and refresh.",
+            modifier = Modifier.fillMaxSize(),
+        )
+        return
+    }
+
+    val model = remember(preset.id, queue) {
+        StudyPlayerModel(preset, surah, queue, app)
+    }
+    var showNoteComposer by remember { mutableStateOf(false) }
+    DisposableEffect(model) {
         onDispose { model.teardown() }
     }
 
-    StudyPlayerContent(model = model, onBack = onBack)
+    StudyPlayerContent(
+        model = model,
+        showNoteComposer = showNoteComposer,
+        onOpenNote = { showNoteComposer = true },
+        onDismissNote = { showNoteComposer = false },
+    )
 }
 
 @Composable
-private fun StudyPlayerContent(model: StudyPlayerModel, onBack: () -> Unit) {
-    var showNoteComposer by remember { mutableStateOf(false) }
-
-    ScreenScaffold(
-        title = model.preset.name,
-        onBack = onBack,
-        actions = {
-            IconButton(onClick = { showNoteComposer = true }) {
-                Icon(Icons.Filled.EditNote, contentDescription = "Add note")
-            }
-        },
-    ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-            ) {
-                PositionHeader(model)
-                VerseCard(model)
-                QueueCard(model)
-            }
-            TransportBar(model)
+private fun StudyPlayerContent(
+    model: StudyPlayerModel,
+    showNoteComposer: Boolean,
+    onOpenNote: () -> Unit,
+    onDismissNote: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            PositionHeader(model, onOpenNote = onOpenNote)
+            VerseCard(model)
+            QueueCard(model)
         }
+        TransportBar(model)
     }
 
     if (showNoteComposer) {
-        NoteComposerDialog(model = model, onDismiss = { showNoteComposer = false })
+        NoteComposerDialog(model = model, onDismiss = onDismissNote)
     }
 }
 
 @Composable
-private fun PositionHeader(model: StudyPlayerModel) {
-    Row(modifier = Modifier.fillMaxWidth()) {
+private fun PositionHeader(model: StudyPlayerModel, onOpenNote: () -> Unit) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = "Verse ${model.positionInSection} of ${model.sectionCount}",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.weight(1f))
-        Text(
-            text = "${model.surah.nameLatin} ${model.currentVerse?.reference ?: ""}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        TextButton(onClick = onOpenNote) {
+            Icon(Icons.Filled.EditNote, contentDescription = null)
+            Spacer(Modifier.size(4.dp))
+            Text("Note")
+        }
     }
+    Text(
+        text = "${model.surah.nameLatin} ${model.currentVerse?.reference ?: ""}",
+        style = MaterialTheme.typography.labelMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
 }
 
 @Composable

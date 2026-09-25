@@ -34,6 +34,8 @@ data class Verse(
     val arabic: String,
     val transliteration: String,
     val translations: List<Translation> = emptyList(),
+    /** Canonical Quran-wide `ayahs.id`; 0 until resolved from the content cache. */
+    val ayahId: Int = 0,
 ) {
     val id: VerseId get() = VerseId(surahId, number)
     val reference: String get() = "$surahId:$number"
@@ -41,8 +43,8 @@ data class Verse(
 
 /**
  * One translation attached to a verse. Translation editions are reserved and
- * empty in the M0 content bundle (captain decision 2026-09-25), so this is
- * carried for placeholder previews only.
+ * empty in the shipped content bundle (captain decision 2026-09-25), so this is
+ * carried for a future cleared edition.
  */
 data class Translation(
     val id: String,

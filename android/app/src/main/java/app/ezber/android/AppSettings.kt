@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.ezber.android.models.TranslationMode
 import app.ezber.android.models.TransliterationStyle
-import app.ezber.android.placeholder.PlaceholderContent
 import java.util.Locale
 
 /**
@@ -16,6 +15,7 @@ import java.util.Locale
  * switch to Turkish.
  *
  * These are app-level defaults; a preset carries its own copies once created.
+ * The content cache size and sync state live in ContentRepository instead.
  */
 class AppSettings(private val preferences: SharedPreferences) {
 
@@ -27,11 +27,10 @@ class AppSettings(private val preferences: SharedPreferences) {
     var themeMode by mutableStateOf(AppThemeMode.fromName(readString(KEY_THEME)))
         private set
 
+    /** 0 means "no default chosen yet"; callers fall back to the first reciter. */
     var defaultReciterId by mutableStateOf(
         preferences.getInt(KEY_DEFAULT_RECITER, DEFAULT_RECITER_ID_UNSET)
-            .takeIf { it != DEFAULT_RECITER_ID_UNSET }
-            ?: PlaceholderContent.reciters.firstOrNull()?.id
-            ?: 0,
+            .takeIf { it > 0 } ?: 0,
     )
         private set
 
@@ -65,6 +64,12 @@ class AppSettings(private val preferences: SharedPreferences) {
 
     var callBehavior by mutableStateOf(
         CallBehavior.fromName(readString(KEY_CALL_BEHAVIOR)),
+    )
+        private set
+
+    /** Base URL of the web content bundle; see [DEFAULT_CONTENT_BASE_URL]. */
+    var contentBaseUrl by mutableStateOf(
+        normalizeBaseUrl(readString(KEY_CONTENT_BASE_URL)) ?: DEFAULT_CONTENT_BASE_URL,
     )
         private set
 
@@ -118,6 +123,12 @@ class AppSettings(private val preferences: SharedPreferences) {
         edit { putString(KEY_CALL_BEHAVIOR, value.name) }
     }
 
+    fun updateContentBaseUrl(value: String) {
+        val normalized = normalizeBaseUrl(value) ?: DEFAULT_CONTENT_BASE_URL
+        contentBaseUrl = normalized
+        edit { putString(KEY_CONTENT_BASE_URL, normalized) }
+    }
+
     private fun readString(key: String): String? = preferences.getString(key, null)
 
     private fun edit(block: SharedPreferences.Editor.() -> Unit) {
@@ -125,12 +136,26 @@ class AppSettings(private val preferences: SharedPreferences) {
     }
 
     companion object {
+        /**
+         * The dev default: the Android emulator reaches a web dev server on the
+         * host at 10.0.2.2, and `npm run content:link` in `web/` serves the
+         * pipeline's grouped export under `/content/`. Override it in Settings.
+         */
+        const val DEFAULT_CONTENT_BASE_URL = "http://10.0.2.2:3000/content/"
+
         fun from(context: Context): AppSettings =
             AppSettings(context.getSharedPreferences(FILE_NAME, Context.MODE_PRIVATE))
 
         /** A throwaway store used by Compose previews. */
         fun forPreview(context: Context): AppSettings =
             AppSettings(context.getSharedPreferences(PREVIEW_FILE_NAME, Context.MODE_PRIVATE))
+
+        /** Trims whitespace and guarantees one trailing slash; null when blank. */
+        fun normalizeBaseUrl(value: String?): String? {
+            val trimmed = value?.trim().orEmpty()
+            if (trimmed.isEmpty()) return null
+            return trimmed.trimEnd('/') + "/"
+        }
 
         private const val FILE_NAME = "ezber-settings"
         private const val PREVIEW_FILE_NAME = "ezber-settings-preview"
@@ -146,6 +171,7 @@ class AppSettings(private val preferences: SharedPreferences) {
         private const val KEY_DEFAULT_LOOP = "settings.defaultLoopUntilStopped"
         private const val KEY_NAVIGATION_BEHAVIOR = "settings.navigationBehavior"
         private const val KEY_CALL_BEHAVIOR = "settings.callBehavior"
+        private const val KEY_CONTENT_BASE_URL = "settings.contentBaseUrl"
     }
 }
 

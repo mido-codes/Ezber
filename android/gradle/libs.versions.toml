@@ -8,6 +8,10 @@ composeBom = "2025.10.00"
 # final extended-icon release is pinned explicitly. Drop it if screen icon
 # coverage is ever reduced to material-icons-core.
 materialIconsExtended = "1.7.8"
+# Unit tests: JUnit 4 plus the genuine org.json so the JSON contract tests can
+# run on the JVM where Android's org.json stub would otherwise throw.
+junit = "4.13.2"
+orgJson = "20240303"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -19,6 +23,8 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
 androidx-compose-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended", version.ref = "materialIconsExtended" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

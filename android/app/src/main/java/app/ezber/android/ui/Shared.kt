@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -14,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -43,6 +46,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import app.ezber.android.R
+import app.ezber.android.models.DownloadState
 import app.ezber.android.models.MemorizationState
 import app.ezber.android.models.Surah
 
@@ -124,10 +128,90 @@ fun EmptyState(
     }
 }
 
+/** Centered progress state for content that is being fetched or read. */
+@Composable
+fun LoadingState(message: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.padding(vertical = 8.dp))
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+/** Centered, retryable error state for a content fetch that failed. */
+@Composable
+fun ContentErrorState(
+    message: String,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+    hint: String = "Check the content address in Settings, then try again.",
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.CloudOff,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.padding(vertical = 6.dp))
+        Text("Content unavailable", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = hint,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.padding(vertical = 8.dp))
+        OutlinedButton(onClick = onRetry) {
+            Text("Retry")
+        }
+    }
+}
+
+/** Downloaded / not-downloaded chip for the offline-first reciter and surah rows. */
+@Composable
+fun DownloadStateBadge(state: DownloadState) {
+    val label = state.label
+    val color = when (state) {
+        DownloadState.DOWNLOADED -> MaterialTheme.colorScheme.secondary
+        DownloadState.DOWNLOADING -> MaterialTheme.colorScheme.primary
+        DownloadState.NOT_DOWNLOADED -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = color,
+        modifier = Modifier
+            .background(color.copy(alpha = 0.12f), RoundedCornerShape(50))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    )
+}
+
 /** Memorization state chip; `null` means no progress row yet ("New"). */
 @Composable
-fun StateBadge(state: MemorizationState?) {
-    val label = state?.label ?: "New"
+fun StateBadge(state: MemorizationState?) {    val label = state?.label ?: "New"
     val color = stateColor(state)
     Text(
         text = label,

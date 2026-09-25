@@ -4,14 +4,14 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
-import app.ezber.android.models.PlanState
+import app.ezber.android.content.ContentRepository
+import app.ezber.android.content.HttpContentFetcher
 import app.ezber.android.persistence.ContentProviding
 import app.ezber.android.persistence.InMemoryContentStore
 import app.ezber.android.persistence.InMemoryUserDataStore
 import app.ezber.android.persistence.SqliteContentStore
 import app.ezber.android.persistence.SqliteUserDataStore
 import app.ezber.android.persistence.UserDataStore
-import app.ezber.android.placeholder.PlaceholderContent
 import app.ezber.android.services.AudioPlayer
 import app.ezber.android.services.AudioSessionService
 import app.ezber.android.services.DrillSessionService
@@ -36,6 +36,8 @@ class AppEnvironment(
     val settings: AppSettings,
     val contentStoreDescription: String,
     val userStoreDescription: String,
+    /** Lazily fills [content] from the web bundle; null in previews. */
+    val contentRepository: ContentRepository? = null,
 ) {
 
     /** Bumped whenever user data changes so list screens refresh. */
@@ -47,44 +49,19 @@ class AppEnvironment(
     }
 
     fun bootstrap() {
-        seedIfNeeded()
         audioSession.configure()
     }
 
-    private fun seedIfNeeded() {
-        if (userData.settingValue(SEED_KEY) == "1") return
-
-        for (preset in PlaceholderContent.seededPresets) {
-            userData.savePreset(preset)
-        }
-        for (entry in PlaceholderContent.seededProgress) {
-            userData.saveProgress(entry)
-        }
-        for (note in PlaceholderContent.seededNotes) {
-            userData.saveNote(note)
-        }
-        PlaceholderContent.seededPresets.firstOrNull()?.let { first ->
-            userData.setLastPresetId(first.id)
-            userData.savePlanState(
-                PlanState(
-                    presetId = first.id,
-                    planIndex = 6,
-                    positionMs = 0L,
-                    repetitionCountersJson = null,
-                ),
-            )
-        }
-        userData.setSettingValue(SEED_KEY, "1")
-        notifyDataChanged()
-    }
-
     companion object {
-        private const val SEED_KEY = "seed.placeholder"
-
-        /** The real environment: SQLite when available, placeholder data otherwise. */
+        /** The real environment: SQLite stores plus the lazy HTTP content cache. */
         fun live(context: Context): AppEnvironment {
-            val sqliteContent = SqliteContentStore.openDefault(context)
-            val content: ContentProviding = sqliteContent ?: InMemoryContentStore()
+            val settings = AppSettings.from(context)
+            val contentStore = SqliteContentStore(context)
+            val contentRepository = ContentRepository(
+                store = contentStore,
+                fetcher = HttpContentFetcher(),
+                baseUrl = { settings.contentBaseUrl },
+            )
 
             val sqliteUser = try {
                 SqliteUserDataStore(context).also { it.allPresets() }
@@ -94,36 +71,33 @@ class AppEnvironment(
             val userData: UserDataStore = sqliteUser ?: InMemoryUserDataStore()
 
             return AppEnvironment(
-                content = content,
+                content = contentStore,
                 userData = userData,
                 audioSession = StubAudioSessionService(),
                 audioPlayer = StubAudioPlayer(),
                 drillSession = StubDrillSessionService(),
                 voiceMemo = StubVoiceMemoService(),
-                settings = AppSettings.from(context),
-                contentStoreDescription = if (sqliteContent != null) {
-                    "SQLite · ezber-content.sqlite"
-                } else {
-                    "Placeholder · content pipeline pending"
-                },
+                settings = settings,
+                contentStoreDescription = "HTTP cache · ezber-content.sqlite",
                 userStoreDescription = if (sqliteUser != null) {
                     "SQLite · ezber-user.sqlite"
                 } else {
-                    "In-memory fallback"
+                    "In-memory fallback (user database unavailable)"
                 },
+                contentRepository = contentRepository,
             )
         }
 
-        /** Seeded environment used by Compose previews. */
+        /** Empty environment used by Compose previews; no network is touched. */
         fun preview(context: Context): AppEnvironment = AppEnvironment(
             content = InMemoryContentStore(),
-            userData = InMemoryUserDataStore.seeded(),
+            userData = InMemoryUserDataStore(),
             audioSession = StubAudioSessionService(),
             audioPlayer = StubAudioPlayer(),
             drillSession = StubDrillSessionService(),
             voiceMemo = StubVoiceMemoService(),
             settings = AppSettings.forPreview(context),
-            contentStoreDescription = "Placeholder · preview",
+            contentStoreDescription = "In-memory · preview",
             userStoreDescription = "In-memory · preview",
         )
     }
