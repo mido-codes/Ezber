@@ -1,17 +1,16 @@
 """Shared test helpers: deterministic synthetic corpus and a fake fetcher.
 
 The end-to-end test builds the *entire* pipeline output (114 surahs, 6236
-ayahs, two editions, two reciters) from generated fixtures, so packaging,
-validation, locking and determinism are all exercised without the network.
+ayahs, enabled synthetic reciters and an optional word-level adapter) from
+generated fixtures, so packaging, validation, locking and determinism are all
+exercised without the network.
 """
 
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import tempfile
-import urllib.parse
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
@@ -20,10 +19,13 @@ from typing import Any
 from ezber_pipeline.canonical import sha256_hex
 from ezber_pipeline.config import PipelineConfig, load_config
 from ezber_pipeline.fetch import FetchResult
+from ezber_pipeline.sources import word_level
 
 TESTS_DIR = Path(__file__).resolve().parent
 FIXTURES_DIR = TESTS_DIR / "fixtures"
 REPO_ROOT = TESTS_DIR.parents[1]
+
+FIXTURE_WORD_SOURCE = "fixture_word_level"
 
 
 def verse_counts() -> dict[int, int]:
@@ -130,39 +132,6 @@ def synthetic_tanzil_metadata_xml() -> bytes:
     return ('<?xml version="1.0" encoding="utf-8" ?>\n' + body + "\n").encode("utf-8")
 
 
-def synthetic_qf_route_keys(base_url: str, resource_ids: list[str], page_size: int) -> dict[str, bytes]:
-    routes: dict[str, bytes] = {}
-    for surah, count in sorted(verse_counts().items()):
-        for page in range(1, (count + page_size - 1) // page_size + 1):
-            url = (
-                f"{base_url}/verses/by_chapter/{surah}?"
-                + urllib.parse.urlencode(
-                    {"translations": ",".join(resource_ids), "per_page": page_size, "page": page}
-                )
-            )
-            start = (page - 1) * page_size
-            end = min(count, start + page_size)
-            verses = []
-            for ayah in range(start + 1, end + 1):
-                translations = []
-                if "57" in resource_ids:
-                    translations.append({"resource_id": 57, "text": synthetic_transliteration(surah, ayah)})
-                if "19" in resource_ids:
-                    translations.append({"resource_id": 19, "text": synthetic_translation(surah, ayah)})
-                verses.append({"verse_key": f"{surah}:{ayah}", "translations": translations})
-            payload = {
-                "verses": verses,
-                "pagination": {
-                    "per_page": page_size,
-                    "current_page": page,
-                    "total_pages": (count + page_size - 1) // page_size,
-                    "total_records": count,
-                },
-            }
-            routes[url] = json.dumps(payload).encode("utf-8")
-    return routes
-
-
 def synthetic_timing(preamble: bool, style: str) -> bytes:
     payload: dict[str, Any] = {}
     for surah, count in sorted(verse_counts().items()):
@@ -185,7 +154,6 @@ def synthetic_ia_metadata(item_id: str, styles: dict[str, list[int]]) -> bytes:
     for style, bitrates in styles.items():
         for bitrate in bitrates:
             for surah, count in sorted(verse_counts().items()):
-                # 30s intro + 2s per ayah keeps every timing range inside the file.
                 duration = 30 + 2 * count + (400 if style == "murattal" else 0)
                 files.append(
                     {
@@ -209,6 +177,67 @@ def synthetic_ia_metadata(item_id: str, styles: dict[str, list[int]]) -> bytes:
     return json.dumps(payload).encode("utf-8")
 
 
+def synthetic_word_level_data(
+    *,
+    reciter_remote_id: str = "fake-reciter-a",
+    variant: str = "murattal",
+    words_per_ayah: int = 2,
+) -> word_level.WordLevelData:
+    """Word transliteration + timing aligned to `synthetic_timing(preamble=False)`."""
+    words: list[word_level.WordToken] = []
+    timings: list[word_level.WordTiming] = []
+    slice_ms = 1000 // words_per_ayah
+    for surah, count in sorted(verse_counts().items()):
+        for ayah in range(1, count + 1):
+            ayah_start = (ayah - 1) * 1000
+            for position in range(1, words_per_ayah + 1):
+                words.append(
+                    word_level.WordToken(
+                        surah=surah,
+                        ayah=ayah,
+                        position=position,
+                        transliteration=f"w{surah}-{ayah}-{position}",
+                    )
+                )
+                timings.append(
+                    word_level.WordTiming(
+                        surah=surah,
+                        ayah=ayah,
+                        position=position,
+                        start_ms=ayah_start + (position - 1) * slice_ms,
+                        end_ms=ayah_start + position * slice_ms,
+                    )
+                )
+    return word_level.WordLevelData(
+        source_id=FIXTURE_WORD_SOURCE,
+        name="Fixture word transliteration",
+        language="en",
+        license_id="cc-by-4.0",
+        license_url="https://creativecommons.org/licenses/by/4.0/",
+        license_evidence_url="https://example.org/fixture-word-source",
+        attribution="Fixture word-level transliteration (test only)",
+        words=words,
+        timing_target=word_level.TimingTarget(reciter_remote_id=reciter_remote_id, variant=variant),
+        timings=timings,
+    )
+
+
+class FakeWordLevelAdapter:
+    source_id = FIXTURE_WORD_SOURCE
+
+    def __init__(self, data: word_level.WordLevelData) -> None:
+        self.data = data
+
+    def fetch(self, fetcher, *, verse_counts):  # noqa: ANN001 - mirrors the protocol
+        return self.data
+
+
+def register_fixture_word_adapter(data: word_level.WordLevelData | None = None) -> word_level.WordLevelData:
+    data = data or synthetic_word_level_data()
+    word_level.register_adapter(FIXTURE_WORD_SOURCE, lambda: FakeWordLevelAdapter(data))
+    return data
+
+
 @dataclass
 class FakeFetcher:
     routes: dict[str, bytes]
@@ -222,23 +251,18 @@ class FakeFetcher:
         if url not in self.routes:
             raise AssertionError(f"FakeFetcher has no route for {url}")
         data = self.routes[url]
-        content_type = "application/json" if url.endswith("json") or "api" in url else "application/xml"
+        content_type = "application/json" if url.endswith("json") else "application/xml"
         return FetchResult(url, data, content_type, sha256_hex(data), True)
 
     def post_form(self, url: str, form: dict[str, str], *, headers: dict[str, str] | None = None) -> FetchResult:
-        raise AssertionError("synthetic corpus never uses the authenticated QF token endpoint")
+        raise AssertionError("the offline bundle never posts")
 
 
-def synthetic_corpus(config: PipelineConfig, reciter_specs: list[dict[str, Any]], page_size: int) -> FakeFetcher:
+def synthetic_corpus(config: PipelineConfig, reciter_specs: list[dict[str, Any]]) -> FakeFetcher:
     """Build every route the pipeline will request for a synthetic bundle."""
     routes: dict[str, bytes] = {}
     routes[config.sources["tanzil_text"].url] = synthetic_tanzil_text_xml()
     routes[config.sources["tanzil_metadata"].url] = synthetic_tanzil_metadata_xml()
-
-    resource_ids = [str(edition["resource_id"]) for edition in config.translations + config.transliterations]
-    routes.update(
-        synthetic_qf_route_keys(config.quran_foundation["public_base_url"], resource_ids, page_size)
-    )
 
     for spec in reciter_specs:
         item_id = spec["remote_id"]
@@ -251,24 +275,27 @@ def synthetic_corpus(config: PipelineConfig, reciter_specs: list[dict[str, Any]]
 def write_synthetic_config(
     config_dir: Path,
     reciter_specs: list[dict[str, Any]],
-    page_size: int = 50,
+    *,
+    word_level_enabled: bool = False,
+    word_timing_target: tuple[str, str] | None = None,
 ) -> None:
     shutil.copytree(REPO_ROOT / "content-pipeline" / "config", config_dir, dirs_exist_ok=True)
-    with open(config_dir / "sources.json", "r", encoding="utf-8") as handle:
-        sources = json.load(handle)
-    sources["quran_foundation"]["page_size"] = page_size
-    (config_dir / "sources.json").write_text(json.dumps(sources, indent=2) + "\n", encoding="utf-8")
 
     reciters = {
-        "config_version": 1,
+        "config_version": 2,
         "catalog_policy": {"admission_rule": "test"},
+        "catalog_notes": [],
+        "fallback_sources": [
+            {"id": "islamic_network", "name": "Islamic Network", "enabled": False, "status": "documented-fallback-off"}
+        ],
         "reciters": [
             {
                 "remote_id": spec["remote_id"],
                 "name": spec["name"],
                 "qirat": "Hafs 'an Asim",
                 "source": "internet_archive",
-                "status": "candidate",
+                "enabled": True,
+                "status": "test_enabled",
                 "license_id": "cc-by-4.0",
                 "license_url": "https://creativecommons.org/licenses/by/4.0/",
                 "license_evidence_url": f"https://archive.org/details/{spec['remote_id']}",
@@ -291,23 +318,35 @@ def write_synthetic_config(
     }
     (config_dir / "reciters.json").write_text(json.dumps(reciters, indent=2) + "\n", encoding="utf-8")
 
+    word_level_config = {
+        "config_version": 1,
+        "enabled": word_level_enabled,
+        "active_source": FIXTURE_WORD_SOURCE if word_level_enabled else None,
+        "timing_target": (
+            {"reciter_remote_id": word_timing_target[0], "variant": word_timing_target[1]}
+            if word_timing_target
+            else None
+        ),
+        "selection_rule": "test fixture",
+        "candidates": [],
+    }
+    (config_dir / "word_level.json").write_text(
+        json.dumps(word_level_config, indent=2) + "\n", encoding="utf-8"
+    )
 
-def clean_qf_environment() -> dict[str, str | None]:
-    """Pop QF credentials for the duration of a test; caller restores."""
-    saved = {name: os.environ.pop(name, None) for name in ("QF_CLIENT_ID", "QF_CLIENT_SECRET", "QF_ENV")}
-    return saved
 
-
-def restore_qf_environment(saved: dict[str, str | None]) -> None:
-    for name, value in saved.items():
-        if value is None:
-            os.environ.pop(name, None)
-        else:
-            os.environ[name] = value
-
-
-def make_temp_config(specs: list[dict[str, Any]], page_size: int = 50) -> tuple[tempfile.TemporaryDirectory, PipelineConfig]:
+def make_temp_config(
+    specs: list[dict[str, Any]],
+    *,
+    word_level_enabled: bool = False,
+    word_timing_target: tuple[str, str] | None = None,
+) -> tuple[tempfile.TemporaryDirectory, PipelineConfig]:
     temp = tempfile.TemporaryDirectory(prefix="ezber-test-")
-    write_synthetic_config(Path(temp.name) / "config", specs, page_size=page_size)
+    write_synthetic_config(
+        Path(temp.name) / "config",
+        specs,
+        word_level_enabled=word_level_enabled,
+        word_timing_target=word_timing_target,
+    )
     config = load_config(Path(temp.name) / "config")
     return temp, config

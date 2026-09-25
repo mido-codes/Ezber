@@ -61,15 +61,18 @@ CREATE INDEX idx_ayahs_surah ON ayahs (surah_id, ayah);
 CREATE INDEX idx_ayahs_juz ON ayahs (juz);
 CREATE INDEX idx_ayahs_page ON ayahs (page);
 
--- Word-level rows. Populated from a licensed word-by-word source (QF word-by-word
--- transliteration resource 60 / QUL). Empty in the M0 bundle: Tanzil text is
--- ayah-level and the word-level edition is still a captain decision (CD-6).
+-- Word-level rows for highlighting. Populated by the configured word-level
+-- adapter (see content-pipeline/config/word_level.json and
+-- sources/word_level.py). The adapter is disabled until a bundleable,
+-- rights-cleared word transliteration + per-word timing source exists, so the
+-- M0 bundle leaves this table empty. transliteration is required because it is
+-- the primary reading surface for the verse line.
 CREATE TABLE words (
   id              INTEGER PRIMARY KEY,
   ayah_id         INTEGER NOT NULL REFERENCES ayahs(id),
   position        INTEGER NOT NULL CHECK (position > 0),
   text_uthmani    TEXT,
-  transliteration TEXT,
+  transliteration TEXT NOT NULL CHECK (length(transliteration) > 0),
   translation     TEXT,
   UNIQUE (ayah_id, position)
 );
@@ -134,6 +137,9 @@ CREATE INDEX idx_segments_ayah ON segments (ayah_id);
 -- Translation and transliteration editions
 -- ---------------------------------------------------------------------------
 
+-- Translation editions are reserved. Captain decision 2026-09-25 dropped the
+-- English translation from the product, so this bundle contains no translation
+-- rows; the tables remain for a future cleared edition.
 CREATE TABLE translations (
   id                   INTEGER PRIMARY KEY,
   resource_id          TEXT NOT NULL UNIQUE,  -- upstream id, e.g. QF "19"

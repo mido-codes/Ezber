@@ -46,10 +46,9 @@ def run_checks(bundle: Bundle, config: PipelineConfig) -> list[CheckResult]:
             failures.append(f"verse_key {ayah.verse_key!r} does not match {ayah.surah_id}:{ayah.ayah}")
             break
     for surah in bundle.surahs:
-        expected = f"surah {surah.id}: verses_count {surah.verses_count}"
         actual = sum(1 for ayah in bundle.ayahs if ayah.surah_id == surah.id)
         if actual != surah.verses_count:
-            failures.append(f"{expected} but {actual} ayahs present")
+            failures.append(f"surah {surah.id}: verses_count {surah.verses_count} but {actual} ayahs present")
             break
     for ayah in bundle.ayahs:
         if not ayah.text_uthmani or not ayah.text_uthmani.strip():
@@ -77,7 +76,7 @@ def run_checks(bundle: Bundle, config: PipelineConfig) -> list[CheckResult]:
         failures.append(f"{sajdah_count} sajdah ayahs, expected 15")
     checks.append(_result("structure.metadata_ranges", failures))
 
-    # -- Editions ----------------------------------------------------------
+    # -- Editions (translation editions are intentionally empty per CD-3) ---
     failures = []
     for edition in bundle.translations:
         rows = [row for row in bundle.translation_rows if row.edition_id == edition.id]
@@ -99,10 +98,31 @@ def run_checks(bundle: Bundle, config: PipelineConfig) -> list[CheckResult]:
             break
     checks.append(_result("editions.complete", failures))
 
+    # -- Word-level transliteration ---------------------------------------
+    failures = []
+    words_by_ayah: dict[int, list[int]] = {}
+    for word in bundle.words:
+        if not word.transliteration.strip():
+            failures.append(f"word {word.id} has empty transliteration")
+            break
+        words_by_ayah.setdefault(word.ayah_id, []).append(word.position)
+    if bundle.words:
+        if len(words_by_ayah) != len(bundle.ayahs):
+            failures.append(
+                f"word-level data covers {len(words_by_ayah)} ayahs, expected {len(bundle.ayahs)}"
+            )
+        for ayah_id, positions in words_by_ayah.items():
+            if sorted(positions) != list(range(1, len(positions) + 1)):
+                failures.append(f"word positions for ayah {ayah_id} are not contiguous from 1")
+                break
+    checks.append(_result("words.integrity", failures))
+
     # -- Segments ----------------------------------------------------------
     failures = []
     ayah_ids = {ayah.id for ayah in bundle.ayahs}
+    word_positions_by_ayah = {ayah_id: set(positions) for ayah_id, positions in words_by_ayah.items()}
     seen: dict[tuple[int, str], set[int]] = {}
+    word_seen: dict[tuple[int, str], set[tuple[int, int]]] = {}
     for segment in bundle.segments:
         if segment.ayah_id not in ayah_ids:
             failures.append(f"segment references unknown ayah id {segment.ayah_id}")
@@ -111,29 +131,54 @@ def run_checks(bundle: Bundle, config: PipelineConfig) -> list[CheckResult]:
             failures.append(f"invalid segment range {segment.start_ms}..{segment.end_ms}")
             break
         key = (segment.reciter_id, segment.variant)
-        seen.setdefault(key, set())
         if segment.word_index == 0:
+            seen.setdefault(key, set())
             if segment.ayah_id in seen[key]:
                 failures.append(f"duplicate whole-ayah segment for reciter {key}")
                 break
             seen[key].add(segment.ayah_id)
+        else:
+            if segment.word_index not in word_positions_by_ayah.get(segment.ayah_id, set()):
+                failures.append(
+                    f"word segment for ayah {segment.ayah_id} word {segment.word_index} has no matching word row"
+                )
+                break
+            word_seen.setdefault(key, set()).add((segment.ayah_id, segment.word_index))
+            whole = seen.get(key, set())
+            if segment.ayah_id not in whole:
+                failures.append(
+                    f"word segment for ayah {segment.ayah_id} has no whole-ayah range for reciter {key}"
+                )
+                break
     reciter_id_by_remote = {reciter.remote_id: reciter.id for reciter in bundle.reciters}
-    for reciter_config in config.reciters:
+    for reciter_config in config.enabled_reciters():
         reciter_id = reciter_id_by_remote.get(reciter_config["remote_id"])
         if reciter_id is None:
-            failures.append(f"configured reciter {reciter_config['remote_id']!r} is missing from the bundle")
+            failures.append(f"enabled reciter {reciter_config['remote_id']!r} is missing from the bundle")
             continue
         for style in reciter_config["styles"]:
             key = (reciter_id, style["id"])
             if key not in seen:
                 failures.append(
-                    f"reciter {reciter_config['remote_id']} style {style['id']}: no timing segments"
+                    f"reciter {reciter_config['remote_id']} style {style['id']}: no whole-ayah timing segments"
                 )
             elif len(seen[key]) != len(bundle.ayahs):
                 failures.append(
                     f"reciter {reciter_config['remote_id']} style {style['id']}: "
                     f"{len(seen[key])} ayahs with timing, expected {len(bundle.ayahs)}"
                 )
+    # When word timings exist for a reciter/style, they must cover every word.
+    for key, positions in word_seen.items():
+        if key not in seen:
+            continue  # already reported
+        expected = {
+            (ayah_id, position)
+            for ayah_id, ayah_positions in word_positions_by_ayah.items()
+            for position in ayah_positions
+        }
+        missing = expected - positions
+        if missing:
+            failures.append(f"word timings for reciter {key} miss {len(missing)} word positions")
     checks.append(_result("segments.coverage_and_ranges", failures))
 
     # -- Audio -------------------------------------------------------------
@@ -159,8 +204,8 @@ def run_checks(bundle: Bundle, config: PipelineConfig) -> list[CheckResult]:
     for key, chapters in grouped.items():
         if chapters != set(range(1, config.expected_surah_count + 1)):
             failures.append(f"audio group {key} covers {len(chapters)} chapters, expected 114")
-    if not bundle.audio_files:
-        failures.append("no audio files in bundle")
+    if config.enabled_reciters() and not bundle.audio_files:
+        failures.append("reciters are enabled but no audio files were built")
     checks.append(_result("audio.chapter_coverage", failures))
 
     # -- Licenses and manifest completeness --------------------------------

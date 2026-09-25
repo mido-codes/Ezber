@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import dataclasses
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,42 +17,45 @@ from tests.test_e2e_offline import RECITER_SPECS
 
 class ValidationTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.saved = helpers.clean_qf_environment()
-        self.addCleanup(helpers.restore_qf_environment, self.saved)
         self.temp = tempfile.TemporaryDirectory(prefix="ezber-validate-")
         self.addCleanup(self.temp.cleanup)
         root = Path(self.temp.name)
-        helpers.write_synthetic_config(root / "config", RECITER_SPECS, page_size=50)
+        helpers.write_synthetic_config(root / "config", RECITER_SPECS)
         self.config = load_config(root / "config")
-        self.fetcher = helpers.synthetic_corpus(
-            self.config, RECITER_SPECS, page_size=self.config.quran_foundation["page_size"]
-        )
+        self.fetcher = helpers.synthetic_corpus(self.config, RECITER_SPECS)
 
-    def _bundle(self):
+    def _bundle(self, *, word_level: bool = False):
+        if word_level:
+            helpers.register_fixture_word_adapter()
+            config_path = Path(self.temp.name) / "word-config"
+            helpers.write_synthetic_config(
+                config_path,
+                RECITER_SPECS,
+                word_level_enabled=True,
+                word_timing_target=("fake-reciter-a", "murattal"),
+            )
+            config = load_config(config_path)
+        else:
+            config = self.config
         lock = LockBook(Path(self.temp.name) / "lock.json")
-        return build_bundle(self.config, self.fetcher, lock)
+        return build_bundle(config, self.fetcher, lock), config
 
-    def _failures(self, bundle) -> list[str]:
-        return [check.name for check in run_checks(bundle, self.config) if not check.ok]
+    def _failures(self, bundle, config) -> list[str]:
+        return [check.name for check in run_checks(bundle, config) if not check.ok]
 
     def test_baseline_bundle_passes(self) -> None:
-        bundle = self._bundle()
-        self.assertEqual(self._failures(bundle), [])
-
-    def test_missing_translation_row_fails(self) -> None:
-        bundle = copy.deepcopy(self._bundle())
-        bundle.translation_rows.pop()
-        self.assertIn("editions.complete", self._failures(bundle))
+        bundle, config = self._bundle()
+        self.assertEqual(self._failures(bundle, config), [])
 
     def test_missing_attribution_fails(self) -> None:
-        import dataclasses
-
-        bundle = copy.deepcopy(self._bundle())
+        bundle, config = self._bundle()
+        bundle = copy.deepcopy(bundle)
         bundle.reciters[0] = dataclasses.replace(bundle.reciters[0], attribution="")
-        self.assertIn("licenses.complete_and_compliant", self._failures(bundle))
+        self.assertIn("licenses.complete_and_compliant", self._failures(bundle, config))
 
     def test_quranicaudio_url_fails(self) -> None:
-        bundle = copy.deepcopy(self._bundle())
+        bundle, config = self._bundle()
+        bundle = copy.deepcopy(bundle)
         template = bundle.audio_files[0]
         bundle.audio_files.append(
             AudioFile(
@@ -70,13 +74,25 @@ class ValidationTests(unittest.TestCase):
                 downloaded_at=None,
             )
         )
-        failures = self._failures(bundle)
-        self.assertIn("policy.deny_list", failures)
+        self.assertIn("policy.deny_list", self._failures(bundle, config))
 
     def test_missing_segments_fail(self) -> None:
-        bundle = copy.deepcopy(self._bundle())
+        bundle, config = self._bundle()
+        bundle = copy.deepcopy(bundle)
         bundle.segments = [segment for segment in bundle.segments if segment.reciter_id != 1]
-        self.assertIn("segments.coverage_and_ranges", self._failures(bundle))
+        self.assertIn("segments.coverage_and_ranges", self._failures(bundle, config))
+
+    def test_word_level_bundle_passes(self) -> None:
+        bundle, config = self._bundle(word_level=True)
+        self.assertEqual(self._failures(bundle, config), [])
+        self.assertEqual(len(bundle.words), 12472)
+
+    def test_word_segment_without_word_row_fails(self) -> None:
+        bundle, config = self._bundle(word_level=True)
+        bundle = copy.deepcopy(bundle)
+        bundle.words = [word for word in bundle.words if word.position != 1]
+        self.assertIn("words.integrity", self._failures(bundle, config))
+        self.assertIn("segments.coverage_and_ranges", self._failures(bundle, config))
 
 
 if __name__ == "__main__":

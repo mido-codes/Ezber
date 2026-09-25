@@ -82,17 +82,17 @@ The main screens — home/continue, the study player, the preset builder, the pr
 ## Current repository state (M0 foundation)
 
 The repo currently holds the **content + legal foundation** — no app UI and no
-car integration yet. The implementation of the screens above starts at M1 (see
-the `quran-app-tech` technical plan, 2026-09-25).
+car integration yet. Screen implementation starts at M1 (see the
+`quran-app-tech` technical plan, 2026-09-25).
 
 | Path | What it is |
 |---|---|
 | `content-pipeline/` | Reproducible fetch → normalize → validate → package pipeline (Python, stdlib only) |
 | `schema/content_schema.sql` | Shared content DB schema (read-only in the app) |
-| `schema/user_schema.sql` | Shared user DB schema (presets, progress, notes + FTS5, sessions, plan state) |
+| `schema/user_schema.sql` | Shared user DB schema (presets, progress, notes + FTS5, sessions, plan state, downloads) |
 | `licenses/registry.json` | Machine-readable license registry with obligations and attribution templates |
 | `licenses/notices/` | Verbatim upstream notices shipped with the bundle (Tanzil) |
-| `docs/` | Pipeline, licensing, schema and open captain-decision notes |
+| `docs/` | Licensing, schema, captain-decision and pipeline notes |
 | `content-pipeline/build/` | Generated bundle artifacts (manifests committed, SQLite ignored) |
 
 ```sh
@@ -101,19 +101,25 @@ make test       # offline unit + end-to-end tests (no network, ~4s)
 make verify     # re-check the built SQLite bundle against its manifest
 ```
 
-The pipeline fetches **Tanzil Quran text v1.1** (Uthmani, CC BY 3.0, stored
-verbatim with its notice), the **Quran Foundation transliteration resource 57**
-and the **public-domain Pickthall translation served as resource 19**, then
-packages 114 surahs, 6236 ayahs and CC BY 4.0–licensed chapter recitations with
-ayah timing into a deterministic SQLite bundle plus a content manifest, audio
-manifest and credits file. The first build pins every upstream payload in
-`content-pipeline/config/source-lock.json`; later builds fail if upstream
-content changes until the change is reviewed.
+**Current bundle:** Tanzil Quran text v1.1 (Uthmani, verbatim, CC BY 3.0 with
+its notice) plus Tanzil metadata, packaged deterministically into SQLite and
+manifests. Captain decisions of 2026-09-25 shape the rest:
+
+- **No English translation** and **no Quran Foundation content or runtime
+  API/OAuth path**: the app is fully offline and ships only redistributable
+  content.
+- **Reciter audio is off** until Quran Foundation confirms sources in writing;
+  five CC BY 4.0 candidates and the off Islamic Network fallback are documented
+  in the audio manifest, and QuranicAudio stays deny-listed.
+- **Word-level transliteration + per-word timing** has a swappable adapter seam
+  (`config/word_level.json`, `sources/word_level.py`), disabled until a
+  redistributable source passes the rights review.
+- **Offline downloads** default to per surah with per-preset scope as a preset
+  option (`presets.download_scope`).
 
 Read `docs/licensing.md` before shipping anything, and
-`docs/captain-decisions.md` for the choices that remain with the captain.
+`docs/captain-decisions.md` for the remaining open calls.
 
 **Non-negotiables:** never modify the Quran text (Tanzil 1.1 verbatim); no
-`client_secret` in the repo (QF credentials from the environment only); no
-QuranicAudio-backed recordings (build fails on the deny-list); content and user
-data stay in separate SQLite files.
+secrets in the repo; no QuranicAudio-backed recordings (build fails on the
+deny-list); content and user data stay in separate SQLite files.

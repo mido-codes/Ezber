@@ -38,6 +38,16 @@ class Ayah:
 
 
 @dataclass(frozen=True)
+class Word:
+    id: int
+    ayah_id: int
+    position: int
+    text_uthmani: str | None
+    transliteration: str
+    translation: str | None
+
+
+@dataclass(frozen=True)
 class Reciter:
     id: int
     remote_id: str
@@ -125,6 +135,7 @@ class Asset:
 class Bundle:
     surahs: list[Surah] = field(default_factory=list)
     ayahs: list[Ayah] = field(default_factory=list)
+    words: list[Word] = field(default_factory=list)
     reciters: list[Reciter] = field(default_factory=list)
     audio_files: list[AudioFile] = field(default_factory=list)
     segments: list[Segment] = field(default_factory=list)
@@ -135,7 +146,7 @@ class Bundle:
     assets: list[Asset] = field(default_factory=list)
     notices: dict[str, bytes] = field(default_factory=dict)
     source_facts: dict[str, Any] = field(default_factory=dict)
-    access_mode: str = "public-legacy"
+    content_mode: str = "offline-bundle"
 
     def ayah_by_key(self) -> dict[str, Ayah]:
         return {ayah.verse_key: ayah for ayah in self.ayahs}

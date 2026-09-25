@@ -7,7 +7,6 @@ pipeline consumes plain dicts/objects.
 
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -42,10 +41,10 @@ class PipelineConfig:
     raw: dict[str, Any]
     config_dir: Path
     sources: dict[str, SourceConfig] = field(default_factory=dict)
-    translations: list[dict[str, Any]] = field(default_factory=list)
-    transliterations: list[dict[str, Any]] = field(default_factory=list)
     reciters: list[dict[str, Any]] = field(default_factory=list)
     catalog_policy: dict[str, Any] = field(default_factory=dict)
+    fallback_sources: list[dict[str, Any]] = field(default_factory=list)
+    word_level: dict[str, Any] = field(default_factory=dict)
     licenses: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @property
@@ -85,8 +84,11 @@ class PipelineConfig:
         return self.raw["policy"]
 
     @property
-    def quran_foundation(self) -> dict[str, Any]:
-        return self.raw["quran_foundation"]
+    def content_policy(self) -> dict[str, Any]:
+        return self.raw.get("content_policy", {})
+
+    def enabled_reciters(self) -> list[dict[str, Any]]:
+        return [reciter for reciter in self.reciters if reciter.get("enabled", False)]
 
 
 def _require(condition: bool, message: str) -> None:
@@ -115,7 +117,7 @@ def load_config(config_dir: Path | None = None) -> PipelineConfig:
         raise ConfigError(f"config directory not found: {config_dir}")
 
     raw = load_json(str(config_dir / "sources.json"))
-    _require(raw.get("config_version") == 1, "unsupported sources.json config_version")
+    _require(raw.get("config_version") == 2, "unsupported sources.json config_version")
 
     sources: dict[str, SourceConfig] = {}
     for source_id, entry in raw.get("sources", {}).items():
@@ -131,22 +133,18 @@ def load_config(config_dir: Path | None = None) -> PipelineConfig:
             notice_file=entry.get("notice_file"),
         )
 
-    translations = load_json(str(config_dir / "translations.json")).get("editions", [])
-    transliterations = load_json(str(config_dir / "transliterations.json")).get("editions", [])
     reciter_doc = load_json(str(config_dir / "reciters.json"))
-    reciters = reciter_doc.get("reciters", [])
-    catalog_policy = reciter_doc.get("catalog_policy", {})
-
+    word_level = load_json(str(config_dir / "word_level.json"))
     licenses = load_licenses()
 
     config = PipelineConfig(
         raw=raw,
         config_dir=config_dir,
         sources=sources,
-        translations=translations,
-        transliterations=transliterations,
-        reciters=reciters,
-        catalog_policy=catalog_policy,
+        reciters=reciter_doc.get("reciters", []),
+        catalog_policy=reciter_doc.get("catalog_policy", {}),
+        fallback_sources=reciter_doc.get("fallback_sources", []),
+        word_level=word_level,
         licenses=licenses,
     )
     validate_config(config)
@@ -159,22 +157,22 @@ def validate_config(config: PipelineConfig) -> None:
     missing = required_sources - set(config.sources)
     _require(not missing, f"missing required sources: {sorted(missing)}")
 
-    _require(config.transliterations, "no transliteration editions configured")
-    _require(config.reciters, "no reciter candidates configured")
-
     known_license_ids = set(config.licenses)
     for source in config.sources.values():
         _require(
             source.license_id in known_license_ids,
             f"source {source.id!r} references unknown license {source.license_id!r}",
         )
-    for edition in config.translations + config.transliterations:
+
+    for fallback in config.fallback_sources:
         _require(
-            edition.get("license_id") in known_license_ids,
-            f"edition {edition.get('resource_id')!r} references unknown license {edition.get('license_id')!r}",
+            not fallback.get("enabled", False),
+            f"fallback source {fallback.get('id')!r} must stay disabled until its rights are cleared",
         )
+
     for reciter in config.reciters:
         _require(bool(reciter.get("remote_id")), "reciter without remote_id")
+        _require(isinstance(reciter.get("enabled"), bool), f"reciter {reciter['remote_id']!r} needs an explicit enabled flag")
         for field_name in config.policy["reciter_required_fields"]:
             _require(
                 bool(reciter.get(field_name)),
@@ -192,14 +190,23 @@ def validate_config(config: PipelineConfig) -> None:
             f"reciter {reciter['remote_id']!r} default_style not in styles",
         )
         for style in reciter["styles"]:
-            _require(bool(style.get("bitrates")), f"reciter {reciter['remote_id']!r} style {style['id']!r} has no bitrates")
+            _require(
+                bool(style.get("bitrates")),
+                f"reciter {reciter['remote_id']!r} style {style['id']!r} has no bitrates",
+            )
             if style["id"] == reciter.get("default_style"):
                 _require(
                     reciter.get("default_bitrate") in style.get("bitrates", []),
                     f"reciter {reciter['remote_id']!r} default_bitrate not in style {style['id']!r} bitrates",
                 )
 
-
-def resolve_env_credentials() -> tuple[str | None, str | None]:
-    """Read QF OAuth credentials from the environment; never from the repo."""
-    return os.environ.get("QF_CLIENT_ID"), os.environ.get("QF_CLIENT_SECRET")
+    word_level = config.word_level
+    _require(word_level.get("config_version") == 1, "unsupported word_level.json config_version")
+    if word_level.get("enabled", False):
+        _require(bool(word_level.get("active_source")), "word_level.enabled needs active_source")
+        configured_license = word_level.get("license_id")
+        if configured_license:
+            _require(
+                configured_license in known_license_ids,
+                f"word-level source references unknown license {configured_license!r}",
+            )

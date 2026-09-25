@@ -99,6 +99,22 @@ def create_database(bundle: Bundle, schema_path: Path, target: Path) -> tuple[st
         )
         _insert(
             conn,
+            "INSERT INTO words (id, ayah_id, position, text_uthmani, transliteration, translation) "
+            "VALUES (?,?,?,?,?,?)",
+            [
+                (
+                    word.id,
+                    word.ayah_id,
+                    word.position,
+                    word.text_uthmani,
+                    word.transliteration,
+                    word.translation,
+                )
+                for word in bundle.words
+            ],
+        )
+        _insert(
+            conn,
             "INSERT INTO reciters (id, remote_id, name, style, qirat, source, license_id, "
             "license_url, license_evidence_url, attribution, has_segments, enabled) "
             "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -219,11 +235,11 @@ def create_database(bundle: Bundle, schema_path: Path, target: Path) -> tuple[st
                 ("schema_version", "1"),
                 ("pipeline_name", "ezber-content-pipeline"),
                 ("pipeline_version", __version__),
-                ("access_mode", bundle.access_mode),
+                ("content_mode", bundle.content_mode),
                 ("logical_digest", digest),
-                ("translation_resource_ids", ",".join(e.resource_id for e in bundle.translations)),
                 ("transliteration_resource_ids", ",".join(e.resource_id for e in bundle.transliterations)),
                 ("reciter_count", str(len(bundle.reciters))),
+                ("word_count", str(len(bundle.words))),
                 ("audio_file_count", str(len(bundle.audio_files))),
                 ("segment_count", str(len(bundle.segments))),
             ],
@@ -313,7 +329,7 @@ def build_content_manifest(
         "bundle": {
             "surahs": len(bundle.surahs),
             "ayahs": len(bundle.ayahs),
-            "words": 0,
+            "words": len(bundle.words),
             "reciters": len(bundle.reciters),
             "audio_files": len(bundle.audio_files),
             "segments": len(bundle.segments),
@@ -326,6 +342,12 @@ def build_content_manifest(
                 for edition in sorted(bundle.transliterations, key=lambda item: item.id)
             ],
             "database": database_info,
+        },
+        "content_policy": {
+            "mode": config.content_policy.get("mode"),
+            "description": config.content_policy.get("description"),
+            "translations_enabled": config.content_policy.get("translations_enabled"),
+            "quran_foundation_enabled": config.content_policy.get("quran_foundation_enabled"),
         },
         "distribution_policy": {
             "deny_hosts": config.policy.get("deny_hosts", []),
@@ -344,7 +366,7 @@ def build_audio_manifest(bundle: Bundle, config: PipelineConfig) -> dict[str, An
         audio_by_group.setdefault((audio.reciter_id, audio.variant, audio.bitrate or 0), []).append(audio)
 
     reciters: list[dict[str, Any]] = []
-    reciter_configs = {entry["remote_id"]: entry for entry in config.reciters}
+    reciter_configs = {entry["remote_id"]: entry for entry in config.enabled_reciters()}
     for reciter in sorted(bundle.reciters, key=lambda item: item.id):
         reciter_config = reciter_configs[reciter.remote_id]
         styles: list[dict[str, Any]] = []
@@ -414,8 +436,31 @@ def build_audio_manifest(bundle: Bundle, config: PipelineConfig) -> dict[str, An
         "distribution_policy": {
             "deny_hosts": config.policy.get("deny_hosts", []),
             "deny_reason": config.policy.get("deny_reason", ""),
+            "admission_rule": config.catalog_policy.get("admission_rule", ""),
         },
         "reciters": reciters,
+        "pending_reciter_candidates": [
+            {
+                "remote_id": reciter["remote_id"],
+                "name": reciter["name"],
+                "status": reciter.get("status", ""),
+                "license_id": reciter["license_id"],
+                "license_evidence_url": reciter["license_evidence_url"],
+                "each": "enable in content-pipeline/config/reciters.json only after Quran Foundation confirms the source in writing (CD-2)",
+            }
+            for reciter in sorted(config.reciters, key=lambda item: item["remote_id"])
+            if not reciter.get("enabled", False)
+        ],
+        "fallback_sources": [
+            {
+                "id": fallback.get("id"),
+                "name": fallback.get("name"),
+                "enabled": fallback.get("enabled", False),
+                "status": fallback.get("status"),
+                "note": fallback.get("note"),
+            }
+            for fallback in config.fallback_sources
+        ],
     }
 
 
@@ -506,7 +551,7 @@ def write_artifacts(
         "report_version": 1,
         "generated_at": _generated_at(),
         "pipeline": {"name": config.name, "version": config.version, "schema_version": config.schema_version},
-        "access_mode": bundle.access_mode,
+        "content_mode": bundle.content_mode,
         "source_facts": bundle.source_facts,
         "counts": {key: value for key, value in manifest["bundle"].items() if key != "database"},
         "database": database_info,

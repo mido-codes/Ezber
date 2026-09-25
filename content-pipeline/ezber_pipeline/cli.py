@@ -43,7 +43,6 @@ def _build(args: argparse.Namespace) -> int:
         fetcher,
         lock,
         verify_audio_sample=args.verify_audio_sample or 0,
-        require_qf_auth=args.require_qf_auth,
     )
     checks = ensure_valid(bundle, config)
     lock.write()
@@ -67,7 +66,7 @@ def _build(args: argparse.Namespace) -> int:
         f"{len(bundle.reciters)} reciters, {len(bundle.audio_files)} audio files, "
         f"{len(bundle.segments)} segments"
     )
-    print(f"access mode:   {bundle.access_mode}")
+    print(f"content mode:  {bundle.content_mode}")
     for name, path in sorted(result.artifacts.items()):
         print(f"{name + ':':<15}{path}")
     return 0
@@ -114,6 +113,7 @@ def _verify(args: argparse.Namespace) -> int:
             table_counts = {
                 "surahs": "surahs",
                 "ayahs": "ayahs",
+                "words": "words",
                 "reciters": "reciters",
                 "audio_files": "audio_files",
                 "segments": "segments",
@@ -141,26 +141,29 @@ def _show_config(args: argparse.Namespace) -> int:
     config = load_config(Path(args.config_dir) if args.config_dir else None)
     summary = {
         "pipeline": {"name": config.name, "version": config.version},
+        "content_policy": config.content_policy,
         "sources": {
             source_id: {"url": source.url, "license_id": source.license_id}
             for source_id, source in sorted(config.sources.items())
         },
-        "translations": [
-            {"resource_id": edition["resource_id"], "license_id": edition["license_id"]}
-            for edition in config.translations
-        ],
-        "transliterations": [
-            {"resource_id": edition["resource_id"], "license_id": edition["license_id"]}
-            for edition in config.transliterations
-        ],
+        "word_level": {
+            "enabled": config.word_level.get("enabled"),
+            "active_source": config.word_level.get("active_source"),
+            "candidates": [candidate.get("source_id") for candidate in config.word_level.get("candidates", [])],
+        },
         "reciters": [
             {
                 "remote_id": reciter["remote_id"],
+                "enabled": reciter.get("enabled"),
                 "license_id": reciter["license_id"],
                 "status": reciter.get("status"),
                 "styles": [style["id"] for style in reciter["styles"]],
             }
             for reciter in config.reciters
+        ],
+        "fallback_sources": [
+            {"id": fallback.get("id"), "enabled": fallback.get("enabled", False)}
+            for fallback in config.fallback_sources
         ],
         "deny_hosts": config.policy.get("deny_hosts", []),
         "license_registry": sorted(config.licenses),
@@ -184,11 +187,6 @@ def build_parser() -> argparse.ArgumentParser:
     build.add_argument("--lock", help="path to source-lock.json")
     build.add_argument("--offline", action="store_true", help="use only the HTTP cache, never the network")
     build.add_argument("--update-lock", action="store_true", help="accept upstream changes and rewrite the lock")
-    build.add_argument(
-        "--require-qf-auth",
-        action="store_true",
-        help="fail unless QF_CLIENT_ID/QF_CLIENT_SECRET are set (authenticated Content API mode)",
-    )
     build.add_argument(
         "--verify-audio-sample",
         type=int,

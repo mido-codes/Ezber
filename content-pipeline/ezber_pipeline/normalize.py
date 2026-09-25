@@ -15,13 +15,14 @@ from .bundle import (
     Reciter,
     Segment,
     Surah,
+    Word,
 )
 from .canonical import digest_json, sha256_digest
-from .config import REPO_ROOT, PipelineConfig, resolve_env_credentials
+from .config import REPO_ROOT, PipelineConfig
 from .errors import ValidationError
 from .fetch import Fetcher
 from .lockfile import LockBook
-from .sources import internet_archive, quran_foundation, tanzil
+from .sources import internet_archive, tanzil, word_level
 
 TIMING_END_TOLERANCE_MS = 2000
 
@@ -148,111 +149,6 @@ def _build_structure(
     return surahs, ayahs
 
 
-def _build_editions(
-    config: PipelineConfig,
-    corpora: dict[str, quran_foundation.EditionCorpus],
-    ayah_id_by_key: dict[str, int],
-    source_url_template: str,
-) -> tuple[list[Edition], list[EditionRow], list[EditionRow], list[Asset]]:
-    translations: list[Edition] = []
-    translation_rows: list[EditionRow] = []
-    transliteration_rows: list[EditionRow] = []
-    assets: list[Asset] = []
-
-    for edition_config in config.translations:
-        resource_id = str(edition_config["resource_id"])
-        corpus = corpora[resource_id]
-        edition_id = int(resource_id)
-        translations.append(
-            Edition(
-                id=edition_id,
-                kind="translation",
-                resource_id=resource_id,
-                name=edition_config["name"],
-                author=edition_config.get("author"),
-                language=edition_config["language"],
-                source=edition_config["source"],
-                license_id=edition_config["license_id"],
-                license_url=edition_config["license_url"],
-                license_evidence_url=edition_config["license_evidence_url"],
-                attribution=edition_config["attribution"],
-            )
-        )
-        for verse_key, text in corpus.rows.items():
-            translation_rows.append(
-                EditionRow(edition_id=edition_id, ayah_id=ayah_id_by_key[verse_key], text=text)
-            )
-        assets.append(
-            Asset(
-                asset_id=f"translation:{resource_id}",
-                kind="translation",
-                description=f"English translation: {edition_config['name']} (QF resource {resource_id})",
-                source_name=edition_config["source"],
-                source_url=source_url_template,
-                version=f"qf-resource-{resource_id}",
-                digest=corpus.digest,
-                bytes=None,
-                license_id=edition_config["license_id"],
-                license_url=edition_config["license_url"],
-                license_evidence_url=edition_config["license_evidence_url"],
-                attribution=edition_config["attribution"],
-                details={
-                    "resource_id": resource_id,
-                    "rows": len(corpus.rows),
-                    "language": edition_config["language"],
-                },
-            )
-        )
-
-    transliterations: list[Edition] = []
-    for edition_config in config.transliterations:
-        resource_id = str(edition_config["resource_id"])
-        corpus = corpora[resource_id]
-        edition_id = int(resource_id)
-        transliterations.append(
-            Edition(
-                id=edition_id,
-                kind="transliteration",
-                resource_id=resource_id,
-                name=edition_config["name"],
-                author=edition_config.get("author"),
-                language=edition_config["language"],
-                source=edition_config["source"],
-                license_id=edition_config["license_id"],
-                license_url=edition_config["license_url"],
-                license_evidence_url=edition_config["license_evidence_url"],
-                attribution=edition_config["attribution"],
-            )
-        )
-        for verse_key, text in corpus.rows.items():
-            transliteration_rows.append(
-                EditionRow(edition_id=edition_id, ayah_id=ayah_id_by_key[verse_key], text=text)
-            )
-        assets.append(
-            Asset(
-                asset_id=f"transliteration:{resource_id}",
-                kind="transliteration",
-                description=f"English transliteration (QF resource {resource_id})",
-                source_name=edition_config["source"],
-                source_url=source_url_template,
-                version=f"qf-resource-{resource_id}",
-                digest=corpus.digest,
-                bytes=None,
-                license_id=edition_config["license_id"],
-                license_url=edition_config["license_url"],
-                license_evidence_url=edition_config["license_evidence_url"],
-                attribution=edition_config["attribution"],
-                details={
-                    "resource_id": resource_id,
-                    "rows": len(corpus.rows),
-                    "language": edition_config["language"],
-                },
-            )
-        )
-
-    return translations, translation_rows, transliterations, transliteration_rows, assets
-
-
 def _build_reciters(
     config: PipelineConfig,
     fetcher: Fetcher,
@@ -260,14 +156,15 @@ def _build_reciters(
     ayah_id_by_key: dict[str, int],
     ayah_id_to_chapter: dict[int, int],
     verse_counts_by_chapter: dict[int, int],
-) -> tuple[list[Reciter], list[AudioFile], list[Segment], list[Asset], list[str]]:
+) -> tuple[list[Reciter], list[AudioFile], list[Segment], list[Asset], list[str], dict[str, int]]:
     reciters: list[Reciter] = []
     audio_files: list[AudioFile] = []
     segments: list[Segment] = []
     assets: list[Asset] = []
     verified_urls: list[str] = []
+    reciter_id_by_remote: dict[str, int] = {}
 
-    for index, reciter_config in enumerate(config.reciters, start=1):
+    for index, reciter_config in enumerate(config.enabled_reciters(), start=1):
         remote_id = reciter_config["remote_id"]
         item, _ = internet_archive.fetch_item(
             fetcher, remote_id, reciter_config["license_metadata_url"]
@@ -278,9 +175,9 @@ def _build_reciters(
 
         all_audio_facts: list[dict[str, Any]] = []
         timing_rows_total = 0
-        recommended_skill = reciter_config["default_style"]
+        default_style_id = reciter_config["default_style"]
         default_style_name = next(
-            style["name"] for style in reciter_config["styles"] if style["id"] == recommended_skill
+            style["name"] for style in reciter_config["styles"] if style["id"] == default_style_id
         )
 
         for style in reciter_config["styles"]:
@@ -447,6 +344,7 @@ def _build_reciters(
                 status=reciter_config.get("status", "candidate"),
             )
         )
+        reciter_id_by_remote[remote_id] = index
         assets.append(
             Asset(
                 asset_id=f"recitation-audio:{remote_id}",
@@ -473,7 +371,211 @@ def _build_reciters(
             )
         )
 
-    return reciters, audio_files, segments, assets, verified_urls
+    return reciters, audio_files, segments, assets, verified_urls, reciter_id_by_remote
+
+
+def _build_word_level(
+    config: PipelineConfig,
+    fetcher: Fetcher,
+    ayah_id_by_key: dict[str, int],
+    verse_counts_by_chapter: dict[int, int],
+    reciter_id_by_remote: dict[str, int],
+) -> tuple[list[Word], list[Segment], list[Edition], list[EditionRow], list[Asset], dict[str, Any]]:
+    adapter = word_level.resolve_adapter(config.word_level)
+    if adapter is None:
+        return [], [], [], [], [], {}
+
+    data = adapter.fetch(fetcher, verse_counts=verse_counts_by_chapter)
+    if data.license_id not in config.licenses:
+        raise ValidationError(
+            [f"word-level source {data.source_id!r} references unknown license {data.license_id!r}"]
+        )
+    if not data.attribution.strip():
+        raise ValidationError([f"word-level source {data.source_id!r} has no attribution"])
+    if data.timing_target is None and data.timings:
+        raise ValidationError([f"word-level source {data.source_id!r} returned timings without a timing_target"])
+
+    tokens_by_verse: dict[str, list[word_level.WordToken]] = {}
+    for token in data.words:
+        verse_key = f"{token.surah}:{token.ayah}"
+        if verse_key not in ayah_id_by_key:
+            raise ValidationError(
+                [f"word-level source {data.source_id!r} returned an unknown verse {verse_key}"]
+            )
+        tokens_by_verse.setdefault(verse_key, []).append(token)
+
+    words: list[Word] = []
+    word_id = 0
+    for surah, count in sorted(verse_counts_by_chapter.items()):
+        for ayah in range(1, count + 1):
+            verse_key = f"{surah}:{ayah}"
+            tokens = sorted(tokens_by_verse.get(verse_key, []), key=lambda token: token.position)
+            if [token.position for token in tokens] != list(range(1, len(tokens) + 1)):
+                raise ValidationError(
+                    [
+                        f"word-level source {data.source_id!r}: words for {verse_key} are missing "
+                        "or not contiguous from position 1"
+                    ]
+                )
+            for token in tokens:
+                if not token.transliteration.strip():
+                    raise ValidationError(
+                        [f"word-level source {data.source_id!r}: empty transliteration at {verse_key} word {token.position}"]
+                    )
+                word_id += 1
+                words.append(
+                    Word(
+                        id=word_id,
+                        ayah_id=ayah_id_by_key[verse_key],
+                        position=token.position,
+                        text_uthmani=token.text_uthmani,
+                        transliteration=token.transliteration,
+                        translation=token.translation,
+                    )
+                )
+
+    word_segments: list[Segment] = []
+    if data.timing_target is not None:
+        reciter_id = reciter_id_by_remote.get(data.timing_target.reciter_remote_id)
+        if reciter_id is None:
+            raise ValidationError(
+                [
+                    f"word-level timing target reciter {data.timing_target.reciter_remote_id!r} "
+                    "is not an enabled reciter in this bundle"
+                ]
+            )
+        reciter_config = next(
+            reciter
+            for reciter in config.enabled_reciters()
+            if reciter["remote_id"] == data.timing_target.reciter_remote_id
+        )
+        valid_variants = {style["id"] for style in reciter_config["styles"]}
+        if data.timing_target.variant not in valid_variants:
+            raise ValidationError(
+                [
+                    f"word-level timing variant {data.timing_target.variant!r} is not a style "
+                    f"of reciter {data.timing_target.reciter_remote_id!r}"
+                ]
+            )
+        timing_by_verse: dict[str, dict[int, word_level.WordTiming]] = {}
+        for timing in data.timings:
+            timing_by_verse.setdefault(f"{timing.surah}:{timing.ayah}", {})[timing.position] = timing
+        for surah, count in sorted(verse_counts_by_chapter.items()):
+            for ayah in range(1, count + 1):
+                verse_key = f"{surah}:{ayah}"
+                tokens = sorted(tokens_by_verse.get(verse_key, []), key=lambda token: token.position)
+                previous_end = None
+                for token in tokens:
+                    timing = timing_by_verse.get(verse_key, {}).get(token.position)
+                    if timing is None:
+                        raise ValidationError(
+                            [
+                                f"word-level source {data.source_id!r}: missing timing for "
+                                f"{verse_key} word {token.position}"
+                            ]
+                        )
+                    if timing.start_ms < 0 or timing.end_ms <= timing.start_ms:
+                        raise ValidationError(
+                            [f"word-level source {data.source_id!r}: invalid range at {verse_key} word {token.position}"]
+                        )
+                    if previous_end is not None and timing.start_ms < previous_end:
+                        raise ValidationError(
+                            [
+                                f"word-level source {data.source_id!r}: overlapping word timings at "
+                                f"{verse_key} word {token.position}"
+                            ]
+                        )
+                    previous_end = timing.end_ms
+                    word_segments.append(
+                        Segment(
+                            reciter_id=reciter_id,
+                            variant=data.timing_target.variant,
+                            ayah_id=ayah_id_by_key[verse_key],
+                            word_index=token.position,
+                            start_ms=timing.start_ms,
+                            end_ms=timing.end_ms,
+                        )
+                    )
+
+    edition_id = int(config.word_level.get("edition_id", 1))
+    transliteration_rows: list[EditionRow] = []
+    explicit = data.ayah_transliteration or {}
+    for surah, count in sorted(verse_counts_by_chapter.items()):
+        for ayah in range(1, count + 1):
+            verse_key = f"{surah}:{ayah}"
+            text = explicit.get(verse_key)
+            if text is None:
+                tokens = sorted(tokens_by_verse.get(verse_key, []), key=lambda token: token.position)
+                text = " ".join(token.transliteration for token in tokens)
+            if not text.strip():
+                raise ValidationError(
+                    [f"word-level source {data.source_id!r}: empty transliteration line for {verse_key}"]
+                )
+            transliteration_rows.append(
+                EditionRow(edition_id=edition_id, ayah_id=ayah_id_by_key[verse_key], text=text)
+            )
+
+    edition = Edition(
+        id=edition_id,
+        kind="transliteration",
+        resource_id=data.source_id,
+        name=data.name,
+        author=None,
+        language=data.language,
+        source="word_level_adapter",
+        license_id=data.license_id,
+        license_url=data.license_url,
+        license_evidence_url=data.license_evidence_url,
+        attribution=data.attribution,
+    )
+
+    digest = digest_json(
+        {
+            "words": [
+                [word.ayah_id, word.position, word.text_uthmani, word.transliteration, word.translation]
+                for word in words
+            ],
+            "timings": [
+                [segment.ayah_id, segment.word_index, segment.start_ms, segment.end_ms]
+                for segment in word_segments
+            ],
+        }
+    )
+    asset = Asset(
+        asset_id=f"word-transliteration:{data.source_id}",
+        kind="word_transliteration",
+        description=(
+            f"Word-level transliteration and timing: {data.name} ({data.license_id})"
+        ),
+        source_name="configured_adapter",
+        source_url=data.license_evidence_url,
+        version=data.source_id,
+        digest=digest,
+        license_id=data.license_id,
+        license_url=data.license_url,
+        license_evidence_url=data.license_evidence_url,
+        attribution=data.attribution,
+        details={
+            "source_id": data.source_id,
+            "words": len(words),
+            "word_segments": len(word_segments),
+            "ayahs": len(transliteration_rows),
+            "timing_target": (
+                {
+                    "reciter_remote_id": data.timing_target.reciter_remote_id,
+                    "variant": data.timing_target.variant,
+                }
+                if data.timing_target
+                else None
+            ),
+        },
+    )
+    source_fact = {
+        "word_level_source": data.source_id,
+        "word_count": len(words),
+        "word_segment_count": len(word_segments),
+    }
+    return words, word_segments, [edition], transliteration_rows, [asset], source_fact
 
 
 def build_bundle(
@@ -482,7 +584,6 @@ def build_bundle(
     lock: LockBook,
     *,
     verify_audio_sample: int = 0,
-    require_qf_auth: bool = False,
 ) -> Bundle:
     # -- Tanzil text and metadata -----------------------------------------
     text_source = config.sources["tanzil_text"]
@@ -513,35 +614,16 @@ def build_bundle(
     ayah_id_to_chapter = {ayah.id: ayah.surah_id for ayah in ayahs}
     verse_counts_by_chapter = {surah.id: surah.verses_count for surah in surahs}
 
-    # -- Quran Foundation editions ----------------------------------------
-    edition_configs = config.translations + config.transliterations
-    resource_ids = [str(edition["resource_id"]) for edition in edition_configs]
-    client_id, client_secret = resolve_env_credentials()
-    qf_config = dict(config.quran_foundation)
-    qf_config["_client_id"] = client_id
-    qf_config["_client_secret"] = client_secret
-    client = quran_foundation.QFClient(fetcher, qf_config, require_auth=require_qf_auth)
-    corpora = client.fetch_editions(resource_ids, verse_counts_by_chapter)
-    source_url_template = client.source_url_template(resource_ids)
-    for resource_id, corpus in corpora.items():
-        lock.check_or_record(
-            f"qf:{resource_id}",
-            {
-                "resource_id": resource_id,
-                "chapters": corpus.chapters_fetched,
-                "rows": len(corpus.rows),
-                "corpus_digest": corpus.digest,
-            },
-        )
-
-    translations, translation_rows, transliterations, transliteration_rows, edition_assets = _build_editions(
-        config, corpora, ayah_id_by_key, source_url_template
-    )
-
-    # -- Recitations -------------------------------------------------------
-    reciters, audio_files, segments, reciter_assets, verified_urls = _build_reciters(
+    # -- Recitations (only explicitly enabled, rights-cleared candidates) --
+    reciters, audio_files, segments, reciter_assets, verified_urls, reciter_id_by_remote = _build_reciters(
         config, fetcher, lock, ayah_id_by_key, ayah_id_to_chapter, verse_counts_by_chapter
     )
+
+    # -- Word-level transliteration and timing adapter ---------------------
+    words, word_segments, transliterations, transliteration_rows, word_assets, word_source_facts = _build_word_level(
+        config, fetcher, ayah_id_by_key, verse_counts_by_chapter, reciter_id_by_remote
+    )
+    segments.extend(word_segments)
 
     if verify_audio_sample:
         _verify_audio_sample(config, fetcher, audio_files, verify_audio_sample)
@@ -579,29 +661,27 @@ def build_bundle(
             details={"juz": len(metadata.juz_starts), "pages": len(metadata.page_starts)},
         ),
     ]
-    assets.extend(edition_assets)
     assets.extend(reciter_assets)
+    assets.extend(word_assets)
     assets.sort(key=lambda asset: asset.asset_id)
 
     return Bundle(
         surahs=surahs,
         ayahs=ayahs,
+        words=words,
         reciters=reciters,
         audio_files=audio_files,
         segments=segments,
-        translations=translations,
-        translation_rows=translation_rows,
         transliterations=transliterations,
         transliteration_rows=transliteration_rows,
         assets=assets,
         notices={"TANZIL-NOTICE.txt": text.notice.encode("utf-8")},
         source_facts={
-            "access_mode": client.access.mode,
-            "qf_access": client.access.describe(),
-            "qf_source_url_template": source_url_template,
+            "content_mode": config.content_policy.get("mode", "offline-bundle"),
             "pipeline_version": __version__,
+            **word_source_facts,
         },
-        access_mode=client.access.mode,
+        content_mode=config.content_policy.get("mode", "offline-bundle"),
     )
 
 

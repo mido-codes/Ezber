@@ -1,14 +1,24 @@
 {
-  "config_version": 1,
+  "config_version": 2,
   "catalog_policy": {
-    "admission_rule": "A recording may enter the audio manifest only when the source declares an explicit distribution license on the item itself, the pipeline can machine-check that declaration at build time, and the recording is not backed by a denied source (QuranicAudio). Entries below are curated candidates; the captain-owned reciter decision (CD-2) confirms the final shortlist and any additional rights diligence.",
-    "evidence_check": "internet_archive items must declare expected_license_url_prefix in their item metadata; the pipeline fails the build otherwise.",
-    "coverage_check": "every enabled style must provide all 114 chapter files and ayah timing for all 6236 ayahs.",
+    "admission_rule": "Captain decision (2026-09-25): a recording may enter the built catalog only when Quran Foundation has confirmed the source in writing. The candidates below are documented but disabled until that written confirmation exists. QuranicAudio-backed recordings are never eligible, and the pipeline still machine-checks each candidate's declared license whenever it is enabled.",
+    "evidence_check": "when an entry is enabled, the pipeline verifies the Internet Archive item still declares expected_license_url_prefix; a missing or changed license fails the build.",
+    "coverage_check": "every enabled style must provide all 114 chapter files and ayah timing for all 6236 ayahs. Disabled entries are not fetched and contribute nothing to the bundle.",
     "timing_note": "Some Dhikr Al-Huda items include an extra ayah-0 row for the surah preamble (isti'adha/bismillah). The pipeline drops that row as a non-ayah and validates the remaining 1..N sequence; it refuses the style when the real ayahs are incomplete."
   },
   "catalog_notes": [
-    "Mahmoud Khalil Al-Husary murattal is deliberately not enabled: its published timing.json has a broken chapter 1 (ayahs 1..6 only, the last two ayahs merged), and the pipeline refuses incomplete coverage. The mujawwad timing for the same reciter is complete and is what this candidate catalog uses.",
-    "The audio and timing files are served by archive.org; the app downloads per chapter at runtime, so no audio is bundled in this repository."
+    "Written confirmation from Quran Foundation is the gate for enabling any reciter here; a CC BY 4.0 declaration by an Internet Archive uploader alone does not satisfy it.",
+    "Mahmoud Khalil Al-Husary murattal is additionally not usable: its published timing.json has a broken chapter 1 (ayahs 1..6 only, the last two ayahs merged). Al-Husary mujawwad timing is complete.",
+    "Audio is never bundled in this repository; the manifest records chapter URLs and hashes, and the app downloads per surah by default (per-preset scope optional)."
+  ],
+  "fallback_sources": [
+    {
+      "id": "islamic_network",
+      "name": "Islamic Network / alquran.cloud audio CDN",
+      "enabled": false,
+      "status": "documented-fallback-off",
+      "note": "Kept as a documented fallback only. It is not a catalog entry and the pipeline has no adapter for it yet; enabling it requires a written license confirmation and a per-ayah or per-word timing source that matches the recordings."
+    }
   ],
   "reciters": [
     {
@@ -16,7 +26,8 @@
       "name": "Mishary Rashid Al-Afasy",
       "qirat": "Hafs 'an Asim",
       "source": "internet_archive",
-      "status": "candidate",
+      "enabled": false,
+      "status": "pending_written_confirmation",
       "license_id": "cc-by-4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0/",
       "license_evidence_url": "https://archive.org/details/dhikr-alhuda-mishari-alafasy-hafs",
@@ -39,7 +50,8 @@
       "name": "Abdulrahman Alsudais",
       "qirat": "Hafs 'an Asim",
       "source": "internet_archive",
-      "status": "candidate",
+      "enabled": false,
+      "status": "pending_written_confirmation",
       "license_id": "cc-by-4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0/",
       "license_evidence_url": "https://archive.org/details/dhikr-alhuda-abdulrahman-alsudais-hafs",
@@ -62,7 +74,8 @@
       "name": "Mahmoud Khalil Al-Husary",
       "qirat": "Hafs 'an Asim",
       "source": "internet_archive",
-      "status": "candidate",
+      "enabled": false,
+      "status": "pending_written_confirmation",
       "license_id": "cc-by-4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0/",
       "license_evidence_url": "https://archive.org/details/dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
@@ -85,7 +98,8 @@
       "name": "Abu Bakr al-Shatri",
       "qirat": "Hafs 'an Asim",
       "source": "internet_archive",
-      "status": "candidate",
+      "enabled": false,
+      "status": "pending_written_confirmation",
       "license_id": "cc-by-4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0/",
       "license_evidence_url": "https://archive.org/details/dhikr-alhuda-abu-bakr-alshatri-hafs",
@@ -108,7 +122,8 @@
       "name": "Mohamed Siddiq al-Minshawi",
       "qirat": "Hafs 'an Asim",
       "source": "internet_archive",
-      "status": "candidate",
+      "enabled": false,
+      "status": "pending_written_confirmation",
       "license_id": "cc-by-4.0",
       "license_url": "https://creativecommons.org/licenses/by/4.0/",
       "license_evidence_url": "https://archive.org/details/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",

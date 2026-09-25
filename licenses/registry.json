@@ -44,52 +44,7 @@
         "The pipeline does not alter the audio or timing files; only checksums and metadata are copied."
       ],
       "attribution": "Recitation audio and ayah timing: {reciter_name} ({qirat}, {style}), provided by Dhikr Al-Huda App on the Internet Archive (item {item_id}), licensed CC BY 4.0.",
-      "notes": "Every archived item is machine-checked at build time to declare this exact license URL in its Internet Archive metadata. The license is declared by the uploading distributor; the captain-owned reciter decision (CD-2) covers the final shortlist and any further rights diligence."
-    },
-    {
-      "id": "qf-developer-terms",
-      "spdx": "LicenseRef-QuranFoundation-DeveloperTerms",
-      "name": "Quran Foundation Content API Developer Terms",
-      "url": "https://api-docs.quran.foundation/legal/developer-terms/",
-      "evidence_urls": [
-        "https://api-docs.quran.foundation/legal/developer-terms/",
-        "https://api-docs.quran.foundation/docs/quickstart/manual-authentication/"
-      ],
-      "redistribution": "not_allowed",
-      "commercial_use": "allowed_with_conditions",
-      "attribution_required": true,
-      "notice_required": false,
-      "modification": "not_allowed",
-      "obligations": [
-        "Display may be used in commercial, freemium and ad-supported apps, but QF content and raw API data may not be sold, sublicensed or redistributed.",
-        "Do not cache or store QF content longer than 1 week except through the Content Sync APIs, which require a re-sync at least every 7 days.",
-        "Never call the OAuth2 token endpoint from browser/mobile code and never ship the client_secret; use a server-side token broker (Server-Only Rule).",
-        "Credit Quran Foundation and each edition/reciter by name."
-      ],
-      "attribution": "Transliteration: Quran Foundation resource 57. Quran data provided by Quran Foundation.",
-      "notes": "The foundation build stores the transliteration inside the app's content bundle; before any store submission the captain must decide the QF runtime strategy (CD-4) because the 1-week cache limit and the no-redistribution rule shape how this bundle may be shipped."
-    },
-    {
-      "id": "qf-served-public-domain",
-      "spdx": "LicenseRef-PublicDomain-with-QF-ServingTerms",
-      "name": "Public-domain work served by Quran Foundation under its Developer Terms",
-      "url": "https://creativecommons.org/publicdomain/mark/1.0/",
-      "evidence_urls": [
-        "https://api-docs.quran.foundation/legal/developer-terms/",
-        "https://api.quran.com/api/v4/resources/translations"
-      ],
-      "redistribution": "not_allowed",
-      "commercial_use": "allowed_with_conditions",
-      "attribution_required": true,
-      "notice_required": false,
-      "modification": "not_allowed",
-      "obligations": [
-        "The underlying English translation (M. Pickthall, 1930) is in the public domain; the copy bundled here is the Quran Foundation-served resource, so the QF Developer Terms apply to this copy.",
-        "Credit Quran Foundation and the translator; do not sell or redistribute the raw rows.",
-        "Re-check QF serving terms before publishing; the underlying text itself stays public domain."
-      ],
-      "attribution": "Translation: Mohammed Marmaduke Pickthall, The Meaning of the Glorious Koran (1930, public domain). Served as Quran Foundation resource 19; Quran data provided by Quran Foundation.",
-      "notes": "Chosen because it is both redistributable in substance (public domain) and served by the same Quran Foundation API as the transliteration, giving one provenance path. The captain still owns the final translation edition choice (CD-3)."
+      "notes": "Not yet shippable: captain decision CD-2 requires a written confirmation from Quran Foundation before any reciter is enabled, so all current candidates are disabled. Whenever an item is enabled the pipeline machine-checks that it still declares the expected license URL in its Internet Archive metadata."
     }
   ]
 }

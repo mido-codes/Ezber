@@ -39,6 +39,10 @@ CREATE TABLE presets (
   show_translation      INTEGER NOT NULL DEFAULT 1 CHECK (show_translation IN (0, 1)),
   pause_between_repeat_ms INTEGER NOT NULL DEFAULT 0 CHECK (pause_between_repeat_ms >= 0),
   playback_mode         TEXT NOT NULL DEFAULT 'ayah' CHECK (playback_mode IN ('ayah', 'chapter')),
+  -- Offline downloads default to whole surahs; 'preset' downloads only the
+  -- preset's verse range; 'inherit' uses settings['downloads.scope'].
+  download_scope        TEXT NOT NULL DEFAULT 'inherit'
+                          CHECK (download_scope IN ('inherit', 'surah', 'preset')),
   created_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   updated_at            TEXT,
   last_used_at          TEXT
@@ -140,5 +144,8 @@ CREATE TABLE settings (
   key    TEXT PRIMARY KEY,
   value  TEXT NOT NULL
 );
+
+-- Defaults the app reads at first launch.
+INSERT INTO settings (key, value) VALUES ('downloads.scope', 'surah');
 
 INSERT INTO schema_version (version) VALUES (1);

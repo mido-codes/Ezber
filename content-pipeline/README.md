@@ -9,19 +9,31 @@ machine with Python 3.11+ and no installed dependencies.
 python3 -m ezber_pipeline build                 # network build
 python3 -m ezber_pipeline build --offline       # rebuild from the HTTP cache
 python3 -m ezber_pipeline build --update-lock   # accept reviewed upstream changes
-python3 -m ezber_pipeline build --require-qf-auth  # fail unless QF creds are set
 python3 -m ezber_pipeline verify                # verify the built bundle
 python3 -m ezber_pipeline show-config           # resolved config, no secrets
 ```
+
+## Content policy
+
+The app is fully offline and ships only redistributable content. There is no
+Quran Foundation content, no runtime Content API, no OAuth2/token-broker path
+and no English translation (captain decision 2026-09-25). What the pipeline can
+bundle:
+
+| Data | State |
+|---|---|
+| Tanzil Uthmani text v1.1 + metadata | shipped |
+| Recitation audio + ayah timing | built only for `enabled: true` reciters; all candidates currently disabled pending Quran Foundation's written confirmation (CD-2) |
+| Word-level transliteration + per-word timing | adapter seam in place, disabled until a redistributable source clears rights (CD-6) |
+| Translation | dropped; tables reserved and empty |
 
 ## Data flow
 
 ```
 Tanzil Uthmani XML v1.1 ─┐
-Tanzil quran-data.xml   ─┤
-QF resource 57 / 19     ─┼─► normalize (bundle.py) ─► validate (validate.py) ─► package (package.py)
-IA CC BY 4.0 metadata   ─┤                                                  ├─ ezber-content.sqlite
-IA timing.json          ─┘                                                  ├─ content-manifest.json
+Tanzil quran-data.xml   ─┼─► normalize (bundle.py) ─► validate (validate.py) ─► package (package.py)
+reciters (enabled only) ─┤                                                  ├─ ezber-content.sqlite
+word-level adapter      ─┘                                                  ├─ content-manifest.json
                                                                             ├─ audio-manifest.json
                                                                             ├─ EZBER-LICENSES.json
                                                                             ├─ TANZIL-NOTICE.txt
@@ -29,8 +41,9 @@ IA timing.json          ─┘                                                  
 ```
 
 Modules: `fetch.py` (HTTP + cache), `lockfile.py` (source pinning),
-`sources/` (one adapter per upstream), `normalize.py`, `validate.py`,
-`package.py`, `canonical.py` (deterministic JSON/digests), `cli.py`.
+`sources/` (one adapter per upstream), `word_level.py` (the swap-in seam),
+`normalize.py`, `validate.py`, `package.py`, `canonical.py` (deterministic
+JSON/digests), `cli.py`.
 
 ## Determinism
 
@@ -42,50 +55,54 @@ Modules: `fetch.py` (HTTP + cache), `lockfile.py` (source pinning),
 - No timestamps land in the SQLite bundle, manifests or credits. Only
   `build-report.json` records a time (from `SOURCE_DATE_EPOCH` when set) and is
   intentionally not tracked by git.
-- `config/source-lock.json` pins the Tanzil payloads, the QF corpus digests and
-  each reciter's timing + audio index. A mismatch aborts the build; use
+- `config/source-lock.json` pins the Tanzil payloads and, whenever reciters are
+  enabled, their timing + audio index digests. A mismatch aborts the build; use
   `--update-lock` only after reviewing the upstream change.
 
 ## The HTTP cache
 
 `content-pipeline/.cache/http/` stores every response with its ETag/Last-Modified
-so rebuilds are cheap and `--offline` works. The cache is gitignored. OAuth
-tokens are never written to it.
+so rebuilds are cheap and `--offline` works. The cache is gitignored.
 
-## Quran Foundation access
+## Word-level adapter (swap-in seam)
 
-- Default (no secrets): the unauthenticated legacy endpoint at
-  `https://api.quran.com/api/v4` via `verses/by_chapter/{n}?translations=19,57`.
-  This keeps CI and fresh clones runnable with zero credentials.
-- With `QF_CLIENT_ID`/`QF_CLIENT_SECRET` in the environment: OAuth2
-  client-credentials against the QF prelive/production Content API
-  (`QF_ENV` selects the environment). The secret is used once for the token
-  exchange, never cached, never logged, never written to a manifest. This is
-  the QF Server-Only Rule.
-- `--require-qf-auth` makes a build fail unless credentials are present, so a
-  release job can assert that it used the authenticated path.
+Word highlighting needs the transliteration of every word plus per-word
+start/end times aligned to a recitation. Because no source that may be
+redistributed has cleared rights yet, the pipeline bundles no word rows.
 
-## Adding a reciter
+To add a source later:
 
-1. Find an Internet Archive item that declares an explicit distribution
-   license (the current catalog uses the CC BY 4.0 "Dhikr Al-Huda" items, whose
-   audio is chapter-level with `timing.json`).
-2. Add an entry to `config/reciters.json`: `remote_id`, display metadata,
-   `license_metadata_url`, `expected_license_url_prefix`, styles, timing path,
-   bitrates.
-3. Run `python3 -m ezber_pipeline build`; the pipeline machine-checks the
-   declared license, resolves all 114 chapter files, validates ayah timing
-   against Tanzil verse counts and writes the new hashes into the lock.
+1. Implement the `WordLevelAdapter` protocol in
+   `ezber_pipeline/sources/word_level.py` and register it with
+   `register_adapter(source_id, factory)`. `fetch()` returns `WordLevelData`
+   with one `WordToken` per word position and, when the source has timings,
+   `WordTiming` rows plus a `TimingTarget(reciter_remote_id, variant)`.
+2. Add the source's license to `licenses/registry.json`, then set
+   `active_source`, `license_id` and (optionally) `timing_target` in
+   `config/word_level.json` and switch `enabled` to true.
+3. Run the build. Normalization fills `words`, word-level `segments` and the
+   transliteration edition rows; validation enforces contiguous word
+   positions, non-empty transliterations, complete per-word timing coverage
+   and non-overlapping ranges.
 
-Recordings without an explicit license, and anything QuranicAudio-backed, are
-rejected by `validate.py` and the deny-list in `config/sources.json`.
+The adapter must only be enabled for content the app may redistribute.
 
-## Adding a translation or transliteration
+## Reciter admission
 
-Add an edition to `config/translations.json` or `config/transliterations.json`
-with the QF resource id, `license_id` from `licenses/registry.json`, evidence
-URL and attribution. The pipeline fetches every ayah and fails if coverage is
-incomplete. QF terms forbid redistributing raw rows; see `docs/licensing.md`.
+A recording is fetched only when its entry in `config/reciters.json` has
+`enabled: true`, which the captain authorizes only after Quran Foundation
+confirms the source in writing. When enabled, the pipeline:
+
+- verifies the Internet Archive item still declares the expected license URL,
+- resolves all 114 chapter files for each configured style/bitrate,
+- validates ayah timing against Tanzil verse counts (dropping the optional
+  ayah-0 preamble row, and refusing incomplete styles),
+- records URLs, sizes and sha1/md5 in the audio manifest, and pins an index
+  digest in the source lock.
+
+QuranicAudio-backed recordings are denied by the policy list and fail the
+build. Disabled candidates and the off Islamic Network fallback are documented
+in the audio manifest so reviewers can see what is waiting for rights.
 
 ## Tests
 
@@ -94,6 +111,7 @@ cd content-pipeline && python3 -m unittest discover -s tests -t .
 ```
 
 The suite is fully offline: `tests/helpers.py` generates a complete synthetic
-corpus (114 surahs / 6236 ayahs / two synthetic reciters) and a `FakeFetcher`,
-so validation, packaging, lock behavior and byte-for-byte determinism are all
-covered without touching the network.
+corpus (114 surahs / 6236 ayahs / enabled synthetic reciters / a fake
+word-level adapter) and a `FakeFetcher`, so validation, packaging, lock
+behavior and byte-for-byte determinism are all covered without touching the
+network.

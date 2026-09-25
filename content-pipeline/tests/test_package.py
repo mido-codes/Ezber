@@ -14,6 +14,7 @@ from ezber_pipeline.bundle import (
     Reciter,
     Segment,
     Surah,
+    Word,
 )
 from ezber_pipeline.package import create_database
 from tests import helpers
@@ -50,8 +51,14 @@ def tiny_bundle() -> Bundle:
     ]
     segments = [
         Segment(1, "murattal", 1, 0, 0, 500),
+        Segment(1, "murattal", 1, 1, 0, 250),
+        Segment(1, "murattal", 1, 2, 250, 500),
         Segment(1, "murattal", 2, 0, 500, 900),
         Segment(1, "murattal", 3, 0, 0, 700),
+    ]
+    words = [
+        Word(1, 1, 1, None, "bismillah", None),
+        Word(2, 1, 2, None, "arrahman", None),
     ]
     translation = Edition(
         id=19,
@@ -60,10 +67,10 @@ def tiny_bundle() -> Bundle:
         name="Tiny translation",
         author="Author",
         language="en",
-        source="quran_foundation",
-        license_id="qf-served-public-domain",
-        license_url="https://creativecommons.org/publicdomain/mark/1.0/",
-        license_evidence_url="https://api-docs.quran.foundation/legal/developer-terms/",
+        source="fixture",
+        license_id="cc-by-3.0",
+        license_url="https://creativecommons.org/licenses/by/3.0/",
+        license_evidence_url="https://example.org/fixture-license",
         attribution="Tiny translation attribution",
     )
     transliteration = Edition(
@@ -73,10 +80,10 @@ def tiny_bundle() -> Bundle:
         name="Tiny transliteration",
         author="Author",
         language="en",
-        source="quran_foundation",
-        license_id="qf-developer-terms",
-        license_url="https://api-docs.quran.foundation/legal/developer-terms/",
-        license_evidence_url="https://api-docs.quran.foundation/legal/developer-terms/",
+        source="fixture",
+        license_id="cc-by-4.0",
+        license_url="https://creativecommons.org/licenses/by/4.0/",
+        license_evidence_url="https://example.org/fixture-license",
         attribution="Tiny transliteration attribution",
     )
     translation_rows = [EditionRow(19, ayah.id, helpers.synthetic_translation(ayah.surah_id, ayah.ayah)) for ayah in ayahs]
@@ -86,6 +93,7 @@ def tiny_bundle() -> Bundle:
     return Bundle(
         surahs=surahs,
         ayahs=ayahs,
+        words=words,
         reciters=[reciter],
         audio_files=audio,
         segments=segments,
@@ -118,7 +126,8 @@ class DatabasePackagingTests(unittest.TestCase):
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM surahs").fetchone()[0], 2)
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM ayahs").fetchone()[0], 3)
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM audio_files").fetchone()[0], 2)
-            self.assertEqual(connection.execute("SELECT COUNT(*) FROM segments").fetchone()[0], 3)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM words").fetchone()[0], 2)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM segments").fetchone()[0], 5)
             meta = dict(connection.execute("SELECT key, value FROM content_meta").fetchall())
             self.assertEqual(meta["logical_digest"], digest)
             self.assertEqual(meta["schema_version"], "1")
@@ -149,10 +158,18 @@ class UserSchemaTests(unittest.TestCase):
 
     def test_schema_version_and_fts_search(self) -> None:
         self.assertEqual(self.connection.execute("SELECT version FROM schema_version").fetchone()[0], 1)
+        self.assertEqual(
+            self.connection.execute("SELECT value FROM settings WHERE key = 'downloads.scope'").fetchone()[0],
+            "surah",
+        )
         self.connection.execute(
             "INSERT INTO presets (name, surah_id, from_ayah, to_ayah, repeat_count) VALUES ('Ar-Rahman drill', 55, 1, 5, 5)"
         )
         preset_id = self.connection.execute("SELECT last_insert_rowid()").fetchone()[0]
+        self.assertEqual(
+            self.connection.execute("SELECT download_scope FROM presets WHERE id = ?", (preset_id,)).fetchone()[0],
+            "inherit",
+        )
         self.connection.execute(
             "INSERT INTO notes (verse_key, body_md) VALUES ('55:1', 'mercy and remembrance')"
         )

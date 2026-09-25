@@ -1,12 +1,12 @@
 {
-  "config_version": 1,
+  "config_version": 2,
   "pipeline": {
     "name": "ezber-content-pipeline",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "schema_version": 1,
     "expected_surah_count": 114,
     "expected_ayah_count": 6236,
-    "user_agent": "ezber-content-pipeline/0.1.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
+    "user_agent": "ezber-content-pipeline/0.2.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
     "http": {
       "timeout_seconds": 60,
       "retries": 3,
@@ -20,6 +20,12 @@
       "tanzil_notice": "TANZIL-NOTICE.txt",
       "build_report": "build-report.json"
     }
+  },
+  "content_policy": {
+    "mode": "offline-redistributable",
+    "description": "The app is fully offline and ships only content that may be redistributed inside it. There is no Quran Foundation content, no runtime Content API access, no OAuth2/token-broker path and no English translation in this bundle. Only Tanzil text and (once rights-cleared) recitation audio and transliteration are eligible.",
+    "translations_enabled": false,
+    "quran_foundation_enabled": false
   },
   "sources": {
     "tanzil_text": {
@@ -41,26 +47,6 @@
       "license_evidence_url": "https://tanzil.net/docs/Quran_Metadata",
       "attribution": "Quran metadata (surah names, juz/hizb/page/sajdah): Tanzil Project (https://tanzil.net), licensed CC BY 3.0."
     }
-  },
-  "quran_foundation": {
-    "public_base_url": "https://api.quran.com/api/v4",
-    "public_base_note": "Unauthenticated legacy endpoint. Used as the zero-secret bootstrap path for reproducible builds and CI; production apps must go through the authenticated Content API via a server-side token broker (QF Server-Only Rule).",
-    "production": {
-      "auth_base_url": "https://oauth2.quran.foundation",
-      "api_base_url": "https://apis.quran.foundation/content/api/v4"
-    },
-    "prelive": {
-      "auth_base_url": "https://prelive-oauth2.quran.foundation",
-      "api_base_url": "https://apis-prelive.quran.foundation/content/api/v4"
-    },
-    "env_var_client_id": "QF_CLIENT_ID",
-    "env_var_client_secret": "QF_CLIENT_SECRET",
-    "env_var_environment": "QF_ENV",
-    "default_environment": "prelive",
-    "token_scope": "content",
-    "page_size": 300,
-    "license_id": "qf-developer-terms",
-    "license_evidence_url": "https://api-docs.quran.foundation/legal/developer-terms/"
   },
   "policy": {
     "deny_hosts": [

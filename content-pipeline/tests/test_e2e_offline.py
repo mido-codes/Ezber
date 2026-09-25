@@ -37,22 +37,18 @@ RECITER_SPECS = [
 
 class OfflineBuildTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.saved = helpers.clean_qf_environment()
-        self.addCleanup(helpers.restore_qf_environment, self.saved)
         self.temp = tempfile.TemporaryDirectory(prefix="ezber-e2e-")
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
-        helpers.write_synthetic_config(self.root / "config", RECITER_SPECS, page_size=50)
+        helpers.write_synthetic_config(self.root / "config", RECITER_SPECS)
         self.config = load_config(self.root / "config")
-        self.fetcher = helpers.synthetic_corpus(
-            self.config, RECITER_SPECS, page_size=self.config.quran_foundation["page_size"]
-        )
+        self.fetcher = helpers.synthetic_corpus(self.config, RECITER_SPECS)
 
     def _build(self, output_name: str, lock_path: Path):
         lock = LockBook(lock_path)
         bundle = build_bundle(self.config, self.fetcher, lock)
         checks = ensure_valid(bundle, self.config)
-        self.assertTrue(all(check.ok for check in checks))
+        self.assertTrue(all(check.ok for check in checks), [check for check in checks if not check.ok])
         lock.write()
         result = write_artifacts(
             bundle,
@@ -72,12 +68,13 @@ class OfflineBuildTests(unittest.TestCase):
         bundle, first = self._build("out1", lock_path)
         self.assertEqual(len(bundle.surahs), 114)
         self.assertEqual(len(bundle.ayahs), 6236)
+        self.assertEqual(len(bundle.words), 0)
         self.assertEqual(len(bundle.reciters), 2)
         self.assertEqual(len(bundle.audio_files), 228)
         self.assertEqual(len(bundle.segments), 12472)
-        self.assertEqual(len(bundle.translation_rows), 6236)
-        self.assertEqual(len(bundle.transliteration_rows), 6236)
-        self.assertEqual(bundle.access_mode, "public-legacy")
+        self.assertEqual(len(bundle.translations), 0)
+        self.assertEqual(len(bundle.transliterations), 0)
+        self.assertEqual(bundle.content_mode, "offline-redistributable")
         self.assertTrue(lock_path.exists())
 
         _, second = self._build("out2", lock_path)
@@ -94,6 +91,30 @@ class OfflineBuildTests(unittest.TestCase):
                 f"artifact {name} differs between identical builds",
             )
 
+    @mock.patch.dict(os.environ, {"SOURCE_DATE_EPOCH": "1700000000"})
+    def test_word_level_adapter_populates_words_and_timings(self) -> None:
+        helpers.register_fixture_word_adapter()
+        helpers.write_synthetic_config(
+            self.root / "word-config",
+            RECITER_SPECS,
+            word_level_enabled=True,
+            word_timing_target=("fake-reciter-a", "murattal"),
+        )
+        config = load_config(self.root / "word-config")
+        lock_path = self.root / "word-lock.json"
+        lock = LockBook(lock_path)
+        bundle = build_bundle(config, self.fetcher, lock)
+        ensure_valid(bundle, config)
+
+        self.assertEqual(len(bundle.words), 6236 * 2)
+        self.assertEqual(len(bundle.transliterations), 1)
+        self.assertEqual(len(bundle.transliteration_rows), 6236)
+        self.assertEqual(len(bundle.segments), 12472 + 6236 * 2)
+        word_assets = [asset for asset in bundle.assets if asset.kind == "word_transliteration"]
+        self.assertEqual(len(word_assets), 1)
+        self.assertEqual(word_assets[0].details["words"], 6236 * 2)
+        self.assertTrue(any(segment.word_index == 1 for segment in bundle.segments))
+
     def test_lock_detects_upstream_change(self) -> None:
         lock_path = self.root / "source-lock.json"
         self._build("out1", lock_path)
@@ -101,7 +122,7 @@ class OfflineBuildTests(unittest.TestCase):
         self.fetcher.routes[self.config.sources["tanzil_text"].url] = changed
         lock = LockBook(lock_path)
         with self.assertRaises(SourceChangedError):
-            build_bundle(self.config, self.fetcher, lock, require_qf_auth=False)
+            build_bundle(self.config, self.fetcher, lock)
 
     @mock.patch.dict(os.environ, {"SOURCE_DATE_EPOCH": "1700000000"})
     def test_cli_verify_accepts_built_bundle(self) -> None:

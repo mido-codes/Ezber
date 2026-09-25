@@ -6,12 +6,12 @@ databases are meant to be used together.
 ## Content vs user data
 
 ```
-ezber-content.sqlite  (pipeline output, read-only, ~6 MB)
+ezber-content.sqlite  (pipeline output, read-only, ~2 MB)
   surahs ─ ayahs ─ words
      │        │
-     │        ├── translation_rows ── translations
-     │        ├── transliteration_rows ── transliterations
-     │        └── segments ── reciters ── audio_files
+     │        ├── translation_rows ── translations          (reserved, empty)
+     │        ├── transliteration_rows ── transliterations  (word-level adapter, off)
+     │        └── segments ── reciters ── audio_files       (pending rights, off)
 ezber-user.sqlite  (app-owned, small, back-up friendly)
   presets ─ preset_verses, progress, plan_state, sessions
   notes (FTS5: note_fts), settings, schema_version
@@ -23,7 +23,9 @@ the captain's Ar-Rahman drill (`presets` row with `surah_id=55, from_ayah=1,
 to_ayah=5, repeat_count=5`):
 
 ```sql
--- app-side: repetend list (ayah × repetition) for the preset
+-- app-side: repetend list (ayah × repetition) for the preset. transliteration_rows
+-- is populated once a word-level adapter is enabled; until then the app shows
+-- Arabic script only or the empty state.
 SELECT a.verse_key, a.text_uthmani, t.text AS transliteration, rep.n
 FROM   ayahs a
 JOIN   transliteration_rows t ON t.ayah_id = a.id AND t.transliteration_id = :transliteration_id
@@ -48,12 +50,16 @@ WHERE  note_fts MATCH :query ORDER BY rank;
 - `verse_key` is the portable identity; always store it next to numeric ids in
   exports.
 - `segments.word_index = 0` is the whole-ayah range from chapter timing;
-  `>= 1` is a word range (needs `words` rows, empty in M0).
+  `>= 1` is a word range and requires matching `words` rows (empty until the
+  word-level adapter is enabled).
 - `audio_files.variant` is the style, `bitrate` the encoding; the app downloads
   one `(variant, bitrate)` per reciter and fills `local_path`/`downloaded_at`.
+  Offline downloads default to per surah; `presets.download_scope` can narrow a
+  preset to its verse range.
 - All dates are ISO-8601 UTC strings, so GRDB (iOS) and Room (Android) can map
   the same file format.
-- `content_meta.logical_digest` is the reproducibility check; `verify` also
+- `content_meta.content_mode` is `offline-redistributable` and
+  `content_meta.logical_digest` is the reproducibility check; `verify` also
   checks the file `sha256` recorded in `content-manifest.json`.
 
 ## Schema changes
