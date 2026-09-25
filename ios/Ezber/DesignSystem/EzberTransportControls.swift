@@ -38,16 +38,16 @@ struct EzberTransportControls: View {
                 iconSize: compact ? 20 : 24,
                 opacity: 0.8,
                 label: "Previous verse",
-                action: onPreviousVerse,
-                compact: compact
+                compact: compact,
+                action: onPreviousVerse
             )
             TransportButton(
                 systemImage: "repeat",
                 iconSize: compact ? 16 : 20,
                 opacity: 0.6,
                 label: "Previous repeat",
-                action: onPreviousRepeat,
-                compact: compact
+                compact: compact,
+                action: onPreviousRepeat
             )
             Button(action: onPlayPause) {
                 Image(systemName: isPlaying ? "pause.fill" : "play.fill")
@@ -64,16 +64,16 @@ struct EzberTransportControls: View {
                 iconSize: compact ? 16 : 20,
                 opacity: 0.6,
                 label: "Next repeat",
-                action: onNextRepeat,
-                compact: compact
+                compact: compact,
+                action: onNextRepeat
             )
             TransportButton(
                 systemImage: "forward.end.fill",
                 iconSize: compact ? 20 : 24,
                 opacity: 0.8,
                 label: "Next verse",
-                action: onNextVerse,
-                compact: compact
+                compact: compact,
+                action: onNextVerse
             )
         }
     }
