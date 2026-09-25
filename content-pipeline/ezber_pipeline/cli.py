@@ -1,4 +1,4 @@
-"""Command-line interface: build, verify, show-config."""
+"""Command-line interface: build, verify, show-config, export-web."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ from .lockfile import LockBook
 from .normalize import build_bundle
 from .package import write_artifacts
 from .validate import ensure_valid
+from .webexport import export_web
 
 LOCK_FILENAME = "source-lock.json"
 
@@ -137,6 +138,24 @@ def _verify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _export_web(args: argparse.Namespace) -> int:
+    output_dir = Path(args.output_dir) if args.output_dir else DEFAULT_OUTPUT_DIR
+    web_dir = Path(args.web_dir) if args.web_dir else None
+    result = export_web(output_dir, web_dir=web_dir)
+    print(f"web bundle:    {result.web_dir}")
+    print(f"index:         {result.index_path}")
+    print(
+        "counts:        "
+        f"{result.counts['surahs']} surahs, {result.counts['ayahs']} ayahs, "
+        f"{result.counts['words']} words, {result.counts['reciters']} reciters, "
+        f"{result.counts['audio_files']} audio files, {result.counts['segments']} segments"
+    )
+    total = result.index_path.stat().st_size + sum(entry["bytes"] for entry in result.files.values())
+    print(f"payload:       {len(result.files) + 1} files, {total:,} bytes")
+    print(f"bundle digest: {result.index['bundle_digest']}")
+    return 0
+
+
 def _show_config(args: argparse.Namespace) -> int:
     config = load_config(Path(args.config_dir) if args.config_dir else None)
     summary = {
@@ -211,6 +230,14 @@ def build_parser() -> argparse.ArgumentParser:
     verify.add_argument("--config-dir")
     verify.add_argument("--output-dir")
     verify.set_defaults(func=_verify)
+
+    export = subparsers.add_parser(
+        "export-web",
+        help="export the built bundle as a compact JSON web/PWA payload under <output-dir>/web",
+    )
+    export.add_argument("--output-dir", help="build directory holding the SQLite bundle and manifests")
+    export.add_argument("--web-dir", help="destination directory (default: <output-dir>/web)")
+    export.set_defaults(func=_export_web)
 
     show = subparsers.add_parser("show-config", help="print the resolved configuration without secrets")
     show.add_argument("--config-dir")

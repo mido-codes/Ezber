@@ -10,6 +10,7 @@ python3 -m ezber_pipeline build                 # network build
 python3 -m ezber_pipeline build --offline       # rebuild from the HTTP cache
 python3 -m ezber_pipeline build --update-lock   # accept reviewed upstream changes
 python3 -m ezber_pipeline verify                # verify the built bundle
+python3 -m ezber_pipeline export-web            # compact JSON web/PWA bundle under build/web/
 python3 -m ezber_pipeline show-config           # resolved config, no secrets
 ```
 
@@ -48,8 +49,8 @@ audio catalog (gated)   ─┘                                                  
 
 Modules: `fetch.py` (HTTP + cache), `lockfile.py` (source pinning),
 `sources/` (one adapter per upstream), `timing.py` (quran-align → token
-alignment), `normalize.py`, `validate.py`, `package.py`, `canonical.py`
-(deterministic JSON/digests), `cli.py`.
+alignment), `normalize.py`, `validate.py`, `package.py`, `webexport.py`
+(web/PWA export), `canonical.py` (deterministic JSON/digests), `cli.py`.
 
 ## Word derivation and timing alignment
 
@@ -85,6 +86,46 @@ alignment), `normalize.py`, `validate.py`, `package.py`, `canonical.py`
   the quran-align archive and each timing asset. A mismatch aborts the build;
   use `--update-lock` only after reviewing the upstream change.
 
+## Web bundle (web/PWA export)
+
+`export-web` derives a compact JSON payload from the built bundle so the web/PWA
+app can seed IndexedDB without parsing SQLite. It reads the same canonical
+artifacts (`ezber-content.sqlite`, `content-manifest.json`, `TANZIL-NOTICE.txt`)
+and the license registry, verifies the database against the manifest first, and
+never modifies the SQLite bundle or the manifests:
+
+| File | Contents |
+|---|---|
+| `index.json` | version, counts, `content_meta`, licence pointer, `bundle_digest` and a sha256/size inventory of every other file |
+| `surahs.json` | `surahs` |
+| `ayahs.json` | `ayahs` plus the primary transliteration edition joined as `transliteration` |
+| `words.json` | `words` |
+| `reciters.json` | `reciters` |
+| `audio-files.json` | `audio_files` (url, checksum, bytes, bitrate, duration, kind, chapter/ayah); build-time `local_path`/`downloaded_at` are omitted |
+| `segments/<reciter>.json` | `segments` for one reciter, with `reciter_id` and `variant` hoisted into the header |
+| `transliterations.json`, `translations.json` | edition tables (translations reserved and empty) |
+| `licenses.json` | the used `licenses/registry.json` entries, attribution strings and notice digests |
+| `TANZIL-NOTICE.txt` | the verbatim Tanzil copyright notice |
+
+Every JSON file is canonical compact UTF-8 (`sort_keys`, one trailing newline)
+and table files are `{"columns": [...], "rows": [[...]]}` in primary-key order.
+Rows move one-for-one into IndexedDB object stores; `verse_key` is the portable
+identity and `segments[].word_index = 0` is the whole-ayah range, `>= 1` a word
+range (offsets within the ayah's own audio file, exactly as in the schema). Two
+exports over the same build are byte-identical.
+
+```sh
+make web                                       # build + export in one command
+python3 -m ezber_pipeline export-web           # re-export an existing build
+python3 -m ezber_pipeline export-web --web-dir path/to/web   # custom destination
+```
+
+`build/web/` is gitignored: like the SQLite bundle it is a reproducible derived
+artifact, not a source. `index.json` is the entry point and lists what to cache;
+its `files[].sha256` digests let the app detect a partial download. The exporter
+writes through a temporary directory and swaps it in, so a failed run never
+destroys a previous bundle.
+
 ## The HTTP cache
 
 `content-pipeline/.cache/http/` stores every response with its ETag/Last-Modified
@@ -111,5 +152,5 @@ The suite is fully offline: `tests/helpers.py` generates a complete synthetic
 corpus (114 surahs / 6236 ayahs / Tanzil-style transliteration / a synthetic
 quran-align archive with deliberate defects / enabled synthetic audio
 reciters) and a `FakeFetcher`, so parsing, repair, validation, packaging, lock
-behavior and byte-for-byte determinism are all covered without touching the
-network.
+behavior, web export and byte-for-byte determinism are all covered without
+touching the network.
