@@ -1,0 +1,944 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "About" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hakkında" }
+        }
+      }
+    },
+    "Add a note" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Not ekle" }
+        }
+      }
+    },
+    "Add note" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Not ekle" }
+        }
+      }
+    },
+    "Always shown" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Her zaman göster" }
+        }
+      }
+    },
+    "App" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Uygulama" }
+        }
+      }
+    },
+    "Arabic script" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Arapça metin" }
+        }
+      }
+    },
+    "Arabic script by default" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Varsayılan Arapça metin" }
+        }
+      }
+    },
+    "Arabic text" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Arapça metin" }
+        }
+      }
+    },
+    "Audio" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ses" }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Vazgeç" }
+        }
+      }
+    },
+    "Choose a section" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bölüm seç" }
+        }
+      }
+    },
+    "Choose a surah" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sure seç" }
+        }
+      }
+    },
+    "Completed" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Tamamlandı" }
+        }
+      }
+    },
+    "Content" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "İçerik" }
+        }
+      }
+    },
+    "Content store" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "İçerik deposu" }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Devam" }
+        }
+      }
+    },
+    "Continue drill" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Drill'e devam et" }
+        }
+      }
+    },
+    "Credits and licenses" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Katkılar ve lisanslar" }
+        }
+      }
+    },
+    "Dark" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Koyu" }
+        }
+      }
+    },
+    "Default reciter" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Varsayılan okuyucu" }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sil" }
+        }
+      }
+    },
+    "Delete preset?" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Preset silinsin mi?" }
+        }
+      }
+    },
+    "Display" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Görünüm" }
+        }
+      }
+    },
+    "Drill queue" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Drill kuyruğu" }
+        }
+      }
+    },
+    "Drill this verse" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bu ayeti çalış" }
+        }
+      }
+    },
+    "Duck under prompts" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Uyarılarda sesi kıs" }
+        }
+      }
+    },
+    "Duplicate" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Çoğalt" }
+        }
+      }
+    },
+    "Edit" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Düzenle" }
+        }
+      }
+    },
+    "Edit note" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Notu düzenle" }
+        }
+      }
+    },
+    "Edit preset" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Preseti düzenle" }
+        }
+      }
+    },
+    "English translation" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "İngilizce çeviri" }
+        }
+      }
+    },
+    "Exposure count" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Çalışma sayısı" }
+        }
+      }
+    },
+    "Export user data (stub)" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Kullanıcı verilerini dışa aktar (stub)" }
+        }
+      }
+    },
+    "First 5 verses" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "İlk 5 ayet" }
+        }
+      }
+    },
+    "From" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Başlangıç" }
+        }
+      }
+    },
+    "Full surah" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Tam sure" }
+        }
+      }
+    },
+    "Hidden during playback" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Oynatma sırasında gizle" }
+        }
+      }
+    },
+    "Home" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ana Sayfa" }
+        }
+      }
+    },
+    "Interface language" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Arayüz dili" }
+        }
+      }
+    },
+    "Keep playing" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Çalmaya devam et" }
+        }
+      }
+    },
+    "Language" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Dil" }
+        }
+      }
+    },
+    "Last played" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Son çalışma" }
+        }
+      }
+    },
+    "Learning" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Öğreniliyor" }
+        }
+      }
+    },
+    "Library" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Kitaplık" }
+        }
+      }
+    },
+    "Light" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Açık" }
+        }
+      }
+    },
+    "Loop until stopped" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Durdurulana kadar döngü" }
+        }
+      }
+    },
+    "Loop until stopped by default" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Varsayılan olarak durdurulana kadar döngü" }
+        }
+      }
+    },
+    "Name" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ad" }
+        }
+      }
+    },
+    "Navigation prompts" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Navigasyon uyarıları" }
+        }
+      }
+    },
+    "Never" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hiç" }
+        }
+      }
+    },
+    "New" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Yeni" }
+        }
+      }
+    },
+    "New drill" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Yeni drill" }
+        }
+      }
+    },
+    "New note" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Yeni not" }
+        }
+      }
+    },
+    "New preset" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Yeni preset" }
+        }
+      }
+    },
+    "Next repeat" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sonraki tekrar" }
+        }
+      }
+    },
+    "Next verse" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sonraki ayet" }
+        }
+      }
+    },
+    "No downloads yet. Downloaded surahs will be listed here." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Henüz indirme yok. İndirilen sureler burada listelenecek." }
+        }
+      }
+    },
+    "No notes" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Not yok" }
+        }
+      }
+    },
+    "No notes for this verse yet." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bu ayet için henüz not yok." }
+        }
+      }
+    },
+    "No presets yet" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Henüz preset yok" }
+        }
+      }
+    },
+    "No progress yet" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Henüz ilerleme yok" }
+        }
+      }
+    },
+    "Note" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Not" }
+        }
+      }
+    },
+    "Notes" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Notlar" }
+        }
+      }
+    },
+    "Open source" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Açık kaynak" }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Duraklat" }
+        }
+      }
+    },
+    "Pause for prompts" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Uyarılarda duraklat" }
+        }
+      }
+    },
+    "Pause, then resume" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Duraklat, sonra devam et" }
+        }
+      }
+    },
+    "Pause, wait for me" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Duraklat, beni bekle" }
+        }
+      }
+    },
+    "Phone calls" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Telefon aramaları" }
+        }
+      }
+    },
+    "Placeholder data" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Yer tutucu veri" }
+        }
+      }
+    },
+    "Play" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Oynat" }
+        }
+      }
+    },
+    "Preset name" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Preset adı" }
+        }
+      }
+    },
+    "Preset unavailable" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Preset yüklenemedi" }
+        }
+      }
+    },
+    "Presets" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Presetler" }
+        }
+      }
+    },
+    "Preview" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Önizleme" }
+        }
+      }
+    },
+    "Previous repeat" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Önceki tekrar" }
+        }
+      }
+    },
+    "Previous verse" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Önceki ayet" }
+        }
+      }
+    },
+    "Progress" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "İlerleme" }
+        }
+      }
+    },
+    "Progress glance" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "İlerlemeye bakış" }
+        }
+      }
+    },
+    "Quran text" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Kuran metni" }
+        }
+      }
+    },
+    "Range" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Aralık" }
+        }
+      }
+    },
+    "Recitation" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Okuma" }
+        }
+      }
+    },
+    "Reciter" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Okuyucu" }
+        }
+      }
+    },
+    "Reciters" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Okuyucular" }
+        }
+      }
+    },
+    "Record voice memo (stub)" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sesli not kaydet (stub)" }
+        }
+      }
+    },
+    "Rename" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Yeniden adlandır" }
+        }
+      }
+    },
+    "Rename preset" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Preseti yeniden adlandır" }
+        }
+      }
+    },
+    "Repeats" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Tekrarlar" }
+        }
+      }
+    },
+    "Repetitions completed" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Tamamlanan tekrar" }
+        }
+      }
+    },
+    "Reset per-verse overrides" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ayet bazlı ayarları sıfırla" }
+        }
+      }
+    },
+    "Reveal translation" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Çeviriyi göster" }
+        }
+      }
+    },
+    "Review" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Tekrar" }
+        }
+      }
+    },
+    "Sample downloaded" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Örnek indirildi" }
+        }
+      }
+    },
+    "Sample not downloaded" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Örnek indirilmedi" }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Kaydet" }
+        }
+      }
+    },
+    "Save changes" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Değişiklikleri kaydet" }
+        }
+      }
+    },
+    "Save note" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Notu kaydet" }
+        }
+      }
+    },
+    "Save preset" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Preseti kaydet" }
+        }
+      }
+    },
+    "Search notes" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Notlarda ara" }
+        }
+      }
+    },
+    "Search surahs" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sure ara" }
+        }
+      }
+    },
+    "Section length" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bölüm uzunluğu" }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ayarlar" }
+        }
+      }
+    },
+    "Simplified" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Basitleştirilmiş" }
+        }
+      }
+    },
+    "Standard" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Standart" }
+        }
+      }
+    },
+    "Start a drill" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Drill'e başla" }
+        }
+      }
+    },
+    "State" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Durum" }
+        }
+      }
+    },
+    "Storage and downloads" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Depolama ve indirmeler" }
+        }
+      }
+    },
+    "Strong" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Güçlü" }
+        }
+      }
+    },
+    "Surah" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sure" }
+        }
+      }
+    },
+    "Surah and section" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sure ve bölüm" }
+        }
+      }
+    },
+    "System" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sistem" }
+        }
+      }
+    },
+    "Tap to reveal" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Dokununca göster" }
+        }
+      }
+    },
+    "Theme" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Tema" }
+        }
+      }
+    },
+    "To" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Bitiş" }
+        }
+      }
+    },
+    "Total repetitions" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Toplam tekrar" }
+        }
+      }
+    },
+    "Transcribed" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Transkribe edildi" }
+        }
+      }
+    },
+    "Transcription pending (stub)" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Transkripsiyon bekliyor (stub)" }
+        }
+      }
+    },
+    "Translation" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Çeviri" }
+        }
+      }
+    },
+    "Translation hidden while playing" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Oynatma sırasında çeviri gizli" }
+        }
+      }
+    },
+    "Transliteration" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Transkripsiyon" }
+        }
+      }
+    },
+    "Transliteration style" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Transkripsiyon stili" }
+        }
+      }
+    },
+    "User store" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Kullanıcı deposu" }
+        }
+      }
+    },
+    "Verse" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ayet" }
+        }
+      }
+    },
+    "Verse text not available." : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Ayet metni yok." }
+        }
+      }
+    },
+    "Version" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sürüm" }
+        }
+      }
+    },
+    "Voice memo" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sesli not" }
+        }
+      }
+    },
+    "Welcome" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Hoş geldiniz" }
+        }
+      }
+    },
+    "What has been drilled" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Neler çalışıldı" }
+        }
+      }
+    },
+    "What to drill next" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "Sırada ne var" }
+        }
+      }
+    },
+    "completed" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "tamamlandı" }
+        }
+      }
+    },
+    "override" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "özel" }
+        }
+      }
+    },
+    "repetitions" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "tekrar" }
+        }
+      }
+    },
+    "strong" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "güçlü" }
+        }
+      }
+    },
+    "verses touched" : {
+      "localizations" : {
+        "tr" : {
+          "stringUnit" : { "state" : "translated", "value" : "çalışılan ayet" }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
