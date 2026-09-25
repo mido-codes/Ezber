@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": ".test-build",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "incremental": false,
+    "plugins": [],
+    "types": ["node"]
+  },
+  "include": [
+    "lib/db/**/*.ts",
+    "lib/content/**/*.ts",
+    "lib/user/**/*.ts",
+    "lib/player/**/*.ts",
+    "lib/verses.ts",
+    "lib/utils.ts",
+    "tests/**/*.ts"
+  ],
+  "exclude": ["node_modules", "out", ".next"]
+}
