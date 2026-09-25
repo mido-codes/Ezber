@@ -7,10 +7,11 @@ import UIKit
 ///
 /// The coordinator owns the CarPlay template hierarchy: a preset list is the
 /// root template, and the shared now-playing template is pushed on top when a
-/// drill starts. It mirrors `DrillSessionService` into the now-playing center,
-/// so the current verse and its transliteration stay on screen as the verse
-/// changes, and it maps the transport controls (previous/next verse and
-/// previous/next repeat) back onto the drill session.
+/// drill starts. It maps the current verse and the preset's display options
+/// onto the drill engine's now-playing description, so the system now-playing
+/// screen keeps showing the verse and its transliteration as they change, and
+/// it maps the transport controls (previous/next verse and previous/next
+/// repeat) back onto the drill session.
 ///
 /// Everything is event-driven and change-gated. The one-second safety tick only
 /// exists for the case where the phone's study player owns the drill session
@@ -21,7 +22,6 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
     private let environment: AppEnvironment
     private let interfaceController: CPInterfaceController
     private let drill: any DrillSessionService
-    private let nowPlayingCenter: CarPlayNowPlayingCenter
 
     private var presetsTemplate: CPListTemplate?
     private var presetItems: [UUID: CPListItem] = [:]
@@ -31,6 +31,7 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
     private var sessionStartedAt = Date()
     private var isStarted = false
     private var lastSyncedState: DrillSessionState?
+    private var lastDescription: DrillNowPlayingDescription?
     private var lastDataRevision = -1
     private var safetyTick: Timer?
     private var remoteCommandTargets: [(command: MPRemoteCommand, target: Any)] = []
@@ -39,7 +40,6 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
         self.environment = environment
         self.interfaceController = interfaceController
         self.drill = environment.drillSession
-        self.nowPlayingCenter = CarPlayNowPlayingCenter(audioSession: environment.audioSession)
         super.init()
     }
 
@@ -75,7 +75,8 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
             drill.delegate = nil
         }
         if drill.state.status != .playing {
-            nowPlayingCenter.publish(nil, force: true)
+            drill.setNowPlayingDescription(nil)
+            MPNowPlayingInfoCenter.default().playbackState = .stopped
         }
     }
 
@@ -96,6 +97,7 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
         activePreset = preset
         activeSurah = surah
         lastSyncedState = nil
+        lastDescription = nil
 
         drill.delegate = self
         drill.load(
@@ -205,7 +207,7 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
                 self?.drill.nextVerse()
             })
         }
-        CPNowPlayingTemplate.shared.nowPlayingButtons = buttons
+        CPNowPlayingTemplate.shared.updateNowPlayingButtons(buttons)
     }
 
     private func configureRemoteCommands() {
@@ -268,6 +270,7 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
         if drill.delegate == nil {
             drill.delegate = self
         }
+        lastDescription = nil
         syncFromSession(force: true)
     }
 
@@ -282,11 +285,20 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
     }
 
     private func tick() {
-        syncFromSession()
-        if environment.dataRevision != lastDataRevision {
+        let dataChanged = environment.dataRevision != lastDataRevision
+        if dataChanged {
             lastDataRevision = environment.dataRevision
+            refreshActivePreset()
             refreshPresets()
         }
+        syncFromSession(force: dataChanged)
+    }
+
+    /// Picks up preset edits (for example a transliteration/Arabic toggle) made
+    /// on the phone while the car is playing.
+    private func refreshActivePreset() {
+        guard let id = activePreset?.id, let updated = environment.userData.preset(id: id) else { return }
+        activePreset = updated
     }
 
     private func syncFromSession(force: Bool = false) {
@@ -294,10 +306,34 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
         if !force, state == lastSyncedState { return }
         lastSyncedState = state
 
+        updatePlaybackState(state)
+
         guard let preset = activePreset, let surah = activeSurah else { return }
-        let info = CarPlayNowPlayingBuilder.makeNowPlayingInfo(preset: preset, surah: surah, state: state)
-        nowPlayingCenter.publish(info, force: force)
+        let reciterName = environment.content.reciter(id: preset.reciterID)?.name ?? preset.reciterID
+        let description = CarPlayNowPlayingBuilder.makeDescription(
+            preset: preset,
+            surah: surah,
+            reciterName: reciterName,
+            state: state
+        )
+        if description != lastDescription {
+            lastDescription = description
+            drill.setNowPlayingDescription(description)
+        }
         saveSession(state: state)
+    }
+
+    /// The engine owns `MPNowPlayingInfoCenter`; CarPlay only reports the
+    /// playback state so the system treats the drill as now playing.
+    private func updatePlaybackState(_ state: DrillSessionState) {
+        switch state.status {
+        case .playing:
+            MPNowPlayingInfoCenter.default().playbackState = .playing
+        case .paused:
+            MPNowPlayingInfoCenter.default().playbackState = .paused
+        case .idle, .completed:
+            MPNowPlayingInfoCenter.default().playbackState = .stopped
+        }
     }
 
     private func saveSession(state: DrillSessionState) {
@@ -318,20 +354,31 @@ final class CarPlayCoordinator: NSObject, DrillSessionServiceDelegate {
 
     // MARK: - DrillSessionServiceDelegate
 
-    func drillSession(_ service: any DrillSessionService, didUpdate state: DrillSessionState) {
-        syncFromSession()
+    // The engine may call its delegate from outside the main actor, so the
+    // delegate methods stay nonisolated and hop onto the main actor to touch
+    // the coordinator's state.
+
+    nonisolated func drillSession(_ service: any DrillSessionService, didUpdate state: DrillSessionState) {
+        Task { @MainActor [weak self] in
+            self?.syncFromSession()
+        }
     }
 
-    func drillSession(_ service: any DrillSessionService, didComplete item: DrillItem, at index: Int) {
-        guard let preset = activePreset else { return }
-        environment.userData.recordCompletion(of: item, presetID: preset.id, at: Date())
-        environment.notifyDataChanged()
+    nonisolated func drillSession(_ service: any DrillSessionService, didComplete item: DrillItem, at index: Int) {
+        Task { @MainActor [weak self] in
+            guard let self, let preset = self.activePreset else { return }
+            self.environment.userData.recordCompletion(of: item, presetID: preset.id, at: Date())
+            self.environment.notifyDataChanged()
+        }
     }
 
-    func drillSessionDidFinish(_ service: any DrillSessionService) {
-        syncFromSession(force: true)
-        if drill.state.status != .playing {
-            try? environment.audioSession.deactivate()
+    nonisolated func drillSessionDidFinish(_ service: any DrillSessionService) {
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+            self.syncFromSession(force: true)
+            if self.drill.state.status != .playing {
+                try? self.environment.audioSession.deactivate()
+            }
         }
     }
 }

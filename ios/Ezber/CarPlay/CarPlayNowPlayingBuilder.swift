@@ -1,28 +1,30 @@
 import Foundation
 
-/// Builds the now-playing metadata for the current drill item.
+/// Builds the now-playing presentation context for the current drill item.
 ///
-/// CarPlay audio apps cannot host arbitrary views on the now-playing screen:
-/// the system renders the metadata the app publishes to `MPNowPlayingInfoCenter`
-/// and `AudioSessionService`. This builder turns a queue item into that
-/// metadata and is the one place that decides what the car shows, so the
-/// preset's display options (Arabic on/off, transliteration shown/hidden) are
-/// honoured by construction:
+/// The AVFoundation engine (`AVDrillSessionService`) owns
+/// `MPNowPlayingInfoCenter` and republishes its metadata from this description
+/// while a drill plays. CarPlay must not publish metadata itself — the engine
+/// would overwrite it within a second — so the preset's display options are
+/// mapped onto the engine's description instead:
 ///
-/// - transliteration shown + Arabic shown: transliteration is the primary line,
-///   Arabic the secondary line
-/// - transliteration only: transliteration is the primary line, the surah and
-///   verse reference the secondary line
-/// - Arabic only: Arabic is the primary line, the surah and verse reference the
-///   secondary line
-/// - neither: the verse reference is the primary line and the preset name the
-///   secondary line
+/// - `surahName` is the title prefix and the engine appends the verse
+///   reference, so the primary line becomes
+///   `"<transliteration|Arabic> 55:3"`
+/// - `reciterName` is the artist line: Arabic when both reading surfaces are
+///   on, otherwise the reciter name
+/// - `presetName` is the album line, with the repeat counter
+///
+/// `DrillNowPlayingDescription` is the only metadata channel CarPlay has; if
+/// the engine ever grows a dedicated verse-line field, switch this mapping to
+/// it.
 enum CarPlayNowPlayingBuilder {
-    static func makeNowPlayingInfo(
+    static func makeDescription(
         preset: Preset,
         surah: Surah,
+        reciterName: String,
         state: DrillSessionState
-    ) -> NowPlayingInfo? {
+    ) -> DrillNowPlayingDescription? {
         guard let item = state.currentItem else { return nil }
 
         let verse = item.verse
@@ -33,31 +35,23 @@ enum CarPlayNowPlayingBuilder {
         let arabic = display.showArabic
             ? verse.arabic.trimmingCharacters(in: .whitespacesAndNewlines)
             : ""
-        let reference = "\(surah.nameLatin) \(verse.reference)"
 
-        let title: String
-        let subtitle: String
+        let primaryLine: String
         if !transliteration.isEmpty {
-            title = transliteration
-            subtitle = arabic.isEmpty ? reference : arabic
+            primaryLine = transliteration
         } else if !arabic.isEmpty {
-            title = arabic
-            subtitle = reference
+            primaryLine = arabic
         } else {
-            title = reference
-            subtitle = preset.name
+            primaryLine = surah.nameLatin
         }
 
-        return NowPlayingInfo(
-            title: title,
-            subtitle: subtitle,
-            albumTitle: "\(preset.name) · repeat \(item.repeatIndex) of \(item.repeatCount)",
-            artworkName: nil,
-            elapsed: 0,
-            duration: 0,
-            playbackRate: state.status == .playing ? 1 : 0,
-            queuePosition: state.currentIndex + 1,
-            queueCount: max(1, state.totalItemCount)
+        let artistLine = (!arabic.isEmpty && arabic != primaryLine) ? arabic : reciterName
+        let albumLine = "\(preset.name) · repeat \(item.repeatIndex) of \(item.repeatCount)"
+
+        return DrillNowPlayingDescription(
+            presetName: albumLine,
+            surahName: primaryLine,
+            reciterName: artistLine
         )
     }
 }

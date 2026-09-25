@@ -6,16 +6,15 @@ the CarPlay Audio entitlement.
 
 ## What is implemented
 
-The car surface is built on top of the existing scaffold services and does not
-change them (`AudioSessionService` and `DrillSessionService` are untouched; the
-player work can land in parallel).
+The car surface is built on the shared service protocols
+(`AudioSessionService`, `DrillSessionService`) and the merged AVFoundation
+drill engine; the service files themselves are untouched.
 
 | File | Responsibility |
 | --- | --- |
 | `Ezber/CarPlay/CarPlaySceneDelegate.swift` | CarPlay scene entry point; builds the coordinator when a head unit connects |
 | `Ezber/CarPlay/CarPlayCoordinator.swift` | Preset list template, drill start/resume, now-playing buttons, media remote commands, session persistence |
-| `Ezber/CarPlay/CarPlayNowPlayingBuilder.swift` | Turns the current drill item + preset display options into now-playing metadata |
-| `Ezber/CarPlay/CarPlayNowPlayingCenter.swift` | Publishes metadata to `AudioSessionService` and mirrors it into `MPNowPlayingInfoCenter` |
+| `Ezber/CarPlay/CarPlayNowPlayingBuilder.swift` | Maps the current drill item + preset display options onto the engine's `DrillNowPlayingDescription` |
 | `Ezber/CarPlay/CarPlayRuntime.swift` | Registry that hands the CarPlay scene the same `AppEnvironment` as the phone scene |
 | `Ezber/Ezber.entitlements` | `com.apple.developer.carplay-audio` |
 | `Info.plist` (at `ios/Info.plist`) | CarPlay scene manifest; intentionally outside the synchronized `Ezber/` group so it is never treated as a bundled resource |
@@ -28,14 +27,20 @@ saved session, starts playback and pushes `CPNowPlayingTemplate.shared`.
 ### The lyrics-style verse surface
 
 CarPlay audio apps cannot host arbitrary custom views, so the supported verse
-surface is the system now-playing template. The coordinator publishes the
-current item to `MPNowPlayingInfoCenter`, and those lines update as the queue
-advances — like a lyrics display, one verse at a time:
+surface is the system now-playing template. The AVFoundation engine
+(`AVDrillSessionService`) owns `MPNowPlayingInfoCenter` and republishes its
+metadata from a `DrillNowPlayingDescription` while a drill plays, so CarPlay
+does not publish metadata itself — the engine would overwrite it within a
+second. Instead the coordinator maps the current item and the preset's display
+options onto that description, and those lines update as the queue advances —
+like a lyrics display, one verse at a time:
 
-- **title**: transliteration when the preset shows it, otherwise Arabic when
-  Arabic is on, otherwise the surah/verse reference
+- **title**: the engine renders `"<surahName> <verse reference>"`, and the
+  builder passes the primary reading line as `surahName`: transliteration when
+  the preset shows it, otherwise Arabic when Arabic is on, otherwise the surah
+  name
 - **artist**: Arabic when both transliteration and Arabic are on, otherwise the
-  surah name and verse reference
+  reciter name
 - **album**: preset name and `repeat n of m`
 - **queue index/count** and playback rate: the verse × repetition position
 
@@ -61,8 +66,10 @@ wired through `MPRemoteCommandCenter`: play, pause, toggle, next/previous track
 
 ### Glanceability
 
-- No animations, no timers that redraw: the surface only changes when the verse,
-  repeat or playback state actually changes (publishing is change-gated).
+- No animations, no timers that redraw: the verse surface only changes when
+  the verse, repeat or playback state actually changes; the description update
+  is change-gated, and the engine's own one-second metadata refresh carries the
+  elapsed time.
 - A one-second safety tick exists for the case where the phone's study player
   owns the `DrillSessionService` delegate; it drops identical state and does no
   work otherwise.
@@ -100,19 +107,17 @@ Until approval:
    -scheme Ezber -destination 'platform=iOS Simulator,name=iPhone 16' build`).
 2. In **Simulator**, open **I/O → External Displays → CarPlay**.
 3. Ezber appears in CarPlay's app list (it declares the CarPlay scene). Tap a
-   preset: playback starts (stub timer) and the now-playing screen shows the
-   current verse line, updating as the queue advances.
+   preset: playback starts and the now-playing screen shows the current verse
+   line, updating as the queue advances.
 4. Use the transport buttons to confirm next/previous verse and repeat, and
    toggle transliteration/Arabic on a preset in the phone app to see the
    metadata change.
 
 ## Known limits
 
-- Audio is still the scaffold's `StubDrillSessionService`; the car sheet is
-  clickable end to end but silent. When the real playback engine lands, it
-  should publish the same `NowPlayingInfo` itself; the mirror in
-  `CarPlayNowPlayingCenter` is then redundant for the lock screen but harmless
-  (identical, change-gated values).
+- `DrillNowPlayingDescription` has no dedicated verse-line field, so the
+  builder maps the reading line into the engine's `surahName` title prefix. If
+  the engine grows a verse-line field, switch `CarPlayNowPlayingBuilder` to it.
 - `DrillSessionService` has a single delegate. The coordinator takes it only if
   no other surface owns it, and re-reads `state` on its safety tick otherwise.
   A future engine with multiple observers removes the need for the tick.
