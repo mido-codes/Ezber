@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Compose draws the whole UI; this theme only provides the window
+         background and removes the platform action bar. -->
+    <style name="Theme.Ezber" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/warm_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

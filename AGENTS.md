@@ -1,6 +1,6 @@
 # Project agent memory
 
-Ezber is a Quran memorization and listening app for iPhone and Android. The repository holds the content foundation — a reproducible content pipeline and the shared schema — together with the native iOS app. The source technical plan is the `quran-app-tech` report (2026-09-25) at `/home/dogukan/dev/firstmate/data/quran-app-tech/report.md`; captain decisions of 2026-09-25 supersede parts of it and are recorded in `docs/captain-decisions.md`.
+Ezber is a Quran memorization and listening app for iPhone and Android. The repository holds the content foundation — a reproducible content pipeline and the shared schema — together with the native iOS and Android apps. The source technical plan is the `quran-app-tech` report (2026-09-25) at `/home/dogukan/dev/firstmate/data/quran-app-tech/report.md`; captain decisions of 2026-09-25 supersede parts of it and are recorded in `docs/captain-decisions.md`.
 
 ## Orientation
 
@@ -11,7 +11,8 @@ Ezber is a Quran memorization and listening app for iPhone and Android. The repo
 - `docs/captain-decisions.md` — resolved captain decisions and the still-open items. Record new captain calls there; do not decide them in code.
 - `content-pipeline/build/` — generated artifacts. Manifests, credits and notices are tracked so reviews can read them; `*.sqlite` and `build-report.json` are gitignored.
 - The iOS app lives in `ios/` (SwiftUI, iOS 17+, Xcode 16+). Build on macOS with `open ios/Ezber.xcodeproj` or `xcodebuild -project ios/Ezber.xcodeproj -scheme Ezber -destination 'platform=iOS Simulator,name=iPhone 16' build`.
-- The ported design system lives in `ios/Ezber/DesignSystem/`: `EzberTheme.swift` is the single source of truth for colour, type, spacing, radius and shadow tokens, and the component files next to it mirror the kit at `data/ezber-design-system` (firstmate workspace). Exact token values are tabulated in `data/ezber-design-review/report.md`. Use those tokens instead of raw colours, fonts or radii. The kit's `accent` (honey) is reserved for the active-verse cue, never actions, progress or tint.
+- The Android app lives in `android/` (Kotlin, Jetpack Compose, single `:app` module). Versions are centralized in `android/gradle/libs.versions.toml`; a Gradle wrapper is committed, so use `./gradlew` rather than a system Gradle.
+- The ported design system lives in `ios/Ezber/DesignSystem/`: `EzberTheme.swift` is the single source of truth for colour, type, spacing, radius and shadow tokens, and the component files next to it mirror the kit at `data/ezber-design-system` (firstmate workspace). Exact token values are tabulated in `data/ezber-design-review/report.md`. Use those tokens instead of raw colours, fonts or radii. The kit's `accent` (honey) is reserved for the active-verse cue, never actions, progress or tint. The Android scaffold mirrors the same tokens in `android/app/src/main/java/app/ezber/android/ui/Theme.kt` (system faces for now; bundling the OFL fonts is a follow-up).
 - The kit's OFL fonts (Plus Jakarta Sans, Source Serif 4) ship in `ios/Ezber/Resources/Fonts/` with their licence texts and are registered at runtime by `EzberFont`; there is deliberately no Info.plist `UIAppFonts` entry.
 
 ## Commands
@@ -20,6 +21,7 @@ Ezber is a Quran memorization and listening app for iPhone and Android. The repo
 - `make pipeline` — real network build (~20s warm cache, ~50 MB SQLite); `make verify` re-checks the SQLite bundle against the manifest.
 - Rebuilds verify `content-pipeline/config/source-lock.json`; upstream changes fail the build until `python3 -m ezber_pipeline build --update-lock` is run deliberately.
 - There is no iOS test target; verify with Xcode previews and a macOS `xcodebuild` build. Linux worktrees have no Swift or Xcode toolchain, so a syntax parse is the strongest local gate.
+- Android build: `cd android && ./gradlew :app:assembleDebug` (JDK 17+, Android SDK platform 36, build-tools 36.0.0). `:app:assembleRelease` and `:app:installDebug` behave as usual; there is no Android test target yet.
 
 ## Non-negotiables
 
@@ -31,8 +33,9 @@ Ezber is a Quran memorization and listening app for iPhone and Android. The repo
 - Generated manifests, credits and JSON digests must stay deterministic — the test suite builds twice and compares bytes.
 - `ios/Ezber.xcodeproj` uses an Xcode file-system-synchronized group: files added under `ios/Ezber/` are compiled automatically and the project file does not need edits.
 - iOS persistence keeps content and user data in separate SQLite stores (`content.sqlite`, `user.sqlite`). The DDL lives only in `ios/Ezber/Persistence/Schema.swift` and is provisional until the canonical shared schema lands under `schema/`; replace it there rather than forking.
-- Playback is AVFoundation-backed: `LiveAudioSessionService` runs the audio session (background audio, Now Playing, lock-screen commands, interruptions, route changes; `UIBackgroundModes: audio` lives in `ios/Ezber.xcodeproj/project.pbxproj`) and `AVDrillSessionService` walks the verse × repetition `DrillQueue`. `PlaceholderDrillAudioResolver` supplies bundled or generated placeholder audio until the content pipeline ships rights-cleared recitations; a content-backed `DrillAudioResolving` replaces only that resolver. The scaffold's `AudioSessionService`/`DrillSessionService` protocol shapes stay stable and new capabilities are additive (default implementations keep the stubs conforming).
-- Screens render from `ios/Ezber/Placeholder/PlaceholderContent.swift` until the content pipeline produces `content.sqlite`.
+- Android persistence copies the canonical user DDL into `android/app/src/main/java/app/ezber/android/persistence/UserSchema.kt` and creates `ezber-user.sqlite` from it. When `schema/` changes, update that file and `UserSchema.VERSION` with a row-preserving migration; the content DB is read-only in the app, which falls back to placeholder content when the database is absent or incompatible. The Android audio interfaces (`AudioPlayer`, `AudioSessionService`) are Media3-shaped but do not depend on Media3 yet.
+- Playback is AVFoundation-backed on iOS: `LiveAudioSessionService` runs the audio session (background audio, Now Playing, lock-screen commands, interruptions, route changes; `UIBackgroundModes: audio` lives in `ios/Ezber.xcodeproj/project.pbxproj`) and `AVDrillSessionService` walks the verse × repetition `DrillQueue`. `PlaceholderDrillAudioResolver` supplies bundled or generated placeholder audio until the content pipeline ships rights-cleared recitations; a content-backed `DrillAudioResolving` replaces only that resolver. The scaffold's `AudioSessionService` and `DrillSessionService` protocol shapes stay stable and new capabilities are additive.
+- Screens render from `ios/Ezber/Placeholder/PlaceholderContent.swift` and `android/app/src/main/java/app/ezber/android/placeholder/PlaceholderContent.kt` until the content pipeline produces `content.sqlite`.
 - Open captain calls stay isolated behind `TODO(open-call: ...)` markers: in-car text policy and tab-shell shape. Launch language resolved English-first (2026-09-25).
 - CI is `.github/workflows/ci.yml`: PRs to `main` and pushes to `main` run three jobs (`content`, `android`, `ios`), each a no-op until its directory (`content-pipeline/`, `android/`, `ios/`) exists, so landing a platform activates its job automatically. Action versions are pinned by commit SHA.
 
