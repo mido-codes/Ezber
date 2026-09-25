@@ -31,7 +31,7 @@ struct ProgressOverviewView: View {
         let _ = app.dataRevision
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: EzberSpacing.x5) {
                     summaryCard
                     nextUpCard
                     if sections.isEmpty {
@@ -46,9 +46,9 @@ struct ProgressOverviewView: View {
                         }
                     }
                 }
-                .padding()
+                .padding(EzberSpacing.screen)
             }
-            .background(Theme.warmBackground.ignoresSafeArea())
+            .background(EzberColor.background.ignoresSafeArea())
             .navigationTitle("Progress")
             .navigationDestination(for: ProgressRoute.self) { route in
                 switch route {
@@ -90,30 +90,29 @@ struct ProgressOverviewView: View {
         let stateCounts = VerseState.allCases.map { state in
             StateCount(state: state, count: entries.filter { $0.state == state }.count)
         }
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: EzberSpacing.x3) {
             Text("What has been drilled")
-                .font(.headline)
-            HStack(spacing: 24) {
+                .font(EzberFont.bodyMedium)
+                .foregroundStyle(EzberColor.foreground)
+            HStack(spacing: EzberSpacing.x6) {
                 metric("\(repetitions)", label: "repetitions")
                 metric("\(entries.count)", label: "verses touched")
                 metric("\(stateCounts.first { $0.state == .strong }?.count ?? 0)", label: "strong")
             }
-            HStack(spacing: 12) {
+            HStack(spacing: EzberSpacing.x3) {
                 ForEach(stateCounts) { item in
-                    HStack(spacing: 4) {
+                    HStack(spacing: EzberSpacing.x1) {
                         Circle()
-                            .fill(item.state.color)
+                            .fill(item.state.markerColor)
                             .frame(width: 8, height: 8)
                         Text("\(item.count) \(item.state.label.lowercased())")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .font(EzberFont.micro)
+                            .foregroundStyle(EzberColor.mutedForeground)
                     }
                 }
             }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 
     @ViewBuilder
@@ -124,12 +123,13 @@ struct ProgressOverviewView: View {
             }
             return lhs.repetitionsCompleted < rhs.repetitionsCompleted
         }) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: EzberSpacing.x3) {
                 Text("What to drill next")
-                    .font(.headline)
+                    .font(EzberFont.bodyMedium)
+                    .foregroundStyle(EzberColor.foreground)
                 Text("\(candidate.verseID.reference) has \(candidate.repetitionsCompleted) repetitions so far.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(EzberFont.caption)
+                    .foregroundStyle(EzberColor.mutedForeground)
                 Button {
                     if let surah = app.content.surah(id: candidate.verseID.surah) {
                         path.append(.builder(.new(
@@ -140,61 +140,62 @@ struct ProgressOverviewView: View {
                 } label: {
                     Label("Drill this verse", systemImage: "play.fill")
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
+                .buttonStyle(EzberButtonStyle(tone: .primary))
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+            .ezberCard()
         }
     }
 
     private func metric(_ value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.title3.monospacedDigit().weight(.semibold))
+                .font(EzberFont.title.monospacedDigit())
+                .foregroundStyle(EzberColor.foreground)
             Text(LocalizedStringKey(label))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(EzberFont.caption)
+                .foregroundStyle(EzberColor.mutedForeground)
         }
     }
 
     private func surahCard(_ section: SurahSection) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: EzberSpacing.x3) {
             HStack {
                 Text(section.surah.nameLatin)
-                    .font(.headline)
+                    .font(EzberFont.bodyMedium)
+                    .foregroundStyle(EzberColor.foreground)
                 Spacer()
                 Text("\(section.totalRepetitions) repetitions")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(EzberFont.caption)
+                    .foregroundStyle(EzberColor.mutedForeground)
             }
             ForEach(section.entries) { entry in
                 Button {
                     path.append(.verseDetail(entry.verseID))
                 } label: {
-                    HStack {
+                    HStack(spacing: EzberSpacing.x2) {
                         Text(entry.verseID.reference)
-                            .font(.subheadline.monospacedDigit())
-                        StateBadge(state: entry.state)
+                            .font(EzberFont.label.monospacedDigit())
+                            .foregroundStyle(EzberColor.foreground)
+                        VerseStateChip(state: entry.state)
                         Spacer()
                         Text("\(entry.repetitionsCompleted)×")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
+                            .font(EzberFont.caption.monospacedDigit())
+                            .foregroundStyle(EzberColor.mutedForeground)
                         Image(systemName: "chevron.right")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(EzberColor.mutedForeground.opacity(0.6))
                     }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 if entry.id != section.entries.last?.id {
-                    Divider()
+                    Rectangle()
+                        .fill(EzberColor.border)
+                        .frame(height: 1)
                 }
             }
         }
-        .padding(20)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 }
 

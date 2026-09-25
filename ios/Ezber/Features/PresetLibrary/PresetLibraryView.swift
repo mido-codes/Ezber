@@ -18,15 +18,23 @@ struct PresetLibraryView: View {
         NavigationStack(path: $path) {
             List {
                 ForEach(app.userData.allPresets()) { preset in
-                    PresetRow(
-                        preset: preset,
-                        surah: app.content.surah(id: preset.surahID),
-                        reciterName: app.content.reciter(id: preset.reciterID)?.name ?? preset.reciterID
+                    EzberPresetCard(
+                        name: preset.name,
+                        meta: meta(for: preset),
+                        emphasized: app.userData.lastUsedPreset()?.id == preset.id
                     ) {
                         app.userData.setLastPresetID(preset.id)
                         app.notifyDataChanged()
                         path.append(.player(preset.id))
                     }
+                    .listRowInsets(EdgeInsets(
+                        top: EzberSpacing.x2,
+                        leading: EzberSpacing.screen,
+                        bottom: EzberSpacing.x2,
+                        trailing: EzberSpacing.screen
+                    ))
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Color.clear)
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
                             deleteTarget = preset
@@ -60,6 +68,8 @@ struct PresetLibraryView: View {
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(EzberColor.background)
             .overlay {
                 if app.userData.allPresets().isEmpty {
                     EmptyStateView(
@@ -113,6 +123,16 @@ struct PresetLibraryView: View {
         }
     }
 
+    private func meta(for preset: Preset) -> String {
+        let reciter = app.content.reciter(id: preset.reciterID)?.name ?? preset.reciterID
+        var meta = "\(preset.range.displayString) · ×\(preset.repeats.defaultRepeats) · \(reciter)"
+        let overrideCount = preset.repeats.overrides.count
+        if overrideCount > 0 {
+            meta += " · \(overrideCount) override\(overrideCount == 1 ? "" : "s")"
+        }
+        return meta
+    }
+
     private var renamePresented: Binding<Bool> {
         Binding(
             get: { renameTarget != nil },
@@ -154,46 +174,6 @@ struct PresetLibraryView: View {
         copy.lastStudiedAt = nil
         app.userData.save(copy)
         app.notifyDataChanged()
-    }
-}
-
-private struct PresetRow: View {
-    let preset: Preset
-    let surah: Surah?
-    let reciterName: String
-    let onPlay: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Button(action: onPlay) {
-                Image(systemName: "play.circle.fill")
-                    .font(.title)
-                    .foregroundStyle(Theme.accent)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Play \(preset.name)")
-
-            VStack(alignment: .leading, spacing: 3) {
-                Text(preset.name)
-                    .font(.body.weight(.medium))
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text("\(reciterName) · \(preset.repeatSummary)")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-    }
-
-    private var subtitle: String {
-        if let surah {
-            return "\(surah.nameLatin) \(preset.range.displayString) · \(preset.range.count) verses"
-        }
-        return "Surah \(preset.surahID) \(preset.range.displayString)"
     }
 }
 

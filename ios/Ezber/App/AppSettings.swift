@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// User preferences, persisted to UserDefaults. Turkish-first: a device whose
-/// language is Turkish gets Turkish, any other language falls back to Turkish
-/// until the learner picks English.
+/// User preferences, persisted to UserDefaults. English-first: a device whose
+/// language is English gets English, any other language falls back to English
+/// until the learner picks Turkish. (Launch-language call resolved 2026-09-25;
+/// see the design-port report §8.)
 ///
 /// Properties are plain stored values so Observation tracks them. Persistence
 /// happens through `persist()`, which the settings screen calls when its
@@ -82,7 +83,7 @@ final class AppSettings {
         }
     }
 
-    var language: Language = .turkish
+    var language: Language = .english
     var themeMode: ThemeMode = .system
     var defaultReciterID: String = ""
     var defaultShowArabic = false
@@ -111,10 +112,10 @@ final class AppSettings {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
-        let deviceLanguage = Locale.current.language.languageCode?.identifier ?? "tr"
+        let deviceLanguage = Locale.current.language.languageCode?.identifier ?? "en"
         self.language = Language(rawValue: defaults.string(forKey: Key.language) ?? "")
             ?? Language(rawValue: deviceLanguage)
-            ?? .turkish
+            ?? .english
         self.themeMode = ThemeMode(rawValue: defaults.string(forKey: Key.themeMode) ?? "") ?? .system
         self.defaultReciterID = defaults.string(forKey: Key.defaultReciterID)
             ?? PlaceholderContent.reciters.first?.id

@@ -63,8 +63,8 @@ struct PresetBuilderView: View {
                         Text("Verse \(number)")
                         if draft.overrides[number] != nil {
                             Text("override")
-                                .font(.caption2)
-                                .foregroundStyle(Theme.accent)
+                                .font(EzberFont.micro)
+                                .foregroundStyle(EzberColor.primary)
                         }
                         Spacer()
                         Stepper(
@@ -74,7 +74,7 @@ struct PresetBuilderView: View {
                         )
                         .labelsHidden()
                         Text("\(draft.repeats.repeats(forVerse: number))×")
-                            .font(.body.monospacedDigit())
+                            .font(EzberFont.body.monospacedDigit())
                             .frame(width: 40, alignment: .trailing)
                     }
                 }
@@ -110,6 +110,7 @@ struct PresetBuilderView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Pause between repeats: \(draft.pauseBetweenRepeats, specifier: "%.1f")s")
                     Slider(value: $draft.pauseBetweenRepeats, in: 0...5, step: 0.5)
+                        .tint(EzberColor.primary)
                 }
                 Toggle("Loop until stopped", isOn: $draft.loopUntilStopped)
             }
@@ -121,6 +122,7 @@ struct PresetBuilderView: View {
                 .disabled(surah == nil)
             }
         }
+        .tint(EzberColor.primary)
         .navigationTitle(isEditing ? "Edit preset" : "New preset")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showReciterPicker) {

@@ -14,16 +14,14 @@ struct VerseProgressDetailView: View {
             Section {
                 if let verse {
                     if !verse.transliteration.isEmpty {
-                        TransliterationText(text: verse.transliteration, style: .body)
+                        TransliterationText(text: verse.transliteration, size: .detail)
                     }
                     if !verse.arabic.isEmpty {
-                        Text(verse.arabic)
-                            .font(.title3)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
+                        ArabicText(text: verse.arabic)
                     }
                 } else {
                     Text("Verse text not available.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(EzberColor.mutedForeground)
                 }
             }
 
@@ -33,26 +31,27 @@ struct VerseProgressDetailView: View {
                 InfoRow(title: "Last played", value: lastPlayedText)
                 HStack {
                     Text("State")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(EzberColor.mutedForeground)
                     Spacer()
-                    StateBadge(state: progress?.state ?? .new)
+                    VerseStateChip(state: progress?.state ?? .new)
                 }
             }
 
             Section("Notes") {
                 if notes.isEmpty {
                     Text("No notes for this verse yet.")
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(EzberColor.mutedForeground)
                 }
                 ForEach(notes) { note in
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: EzberSpacing.x1) {
                         Text(note.body)
+                            .font(EzberFont.body)
                         HStack(spacing: 6) {
                             Image(systemName: note.kind.systemImage)
                             Text(note.updatedAt.formatted(date: .abbreviated, time: .shortened))
                         }
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(EzberFont.micro)
+                        .foregroundStyle(EzberColor.mutedForeground)
                     }
                 }
                 TextField("Add a note", text: $newNoteBody, axis: .vertical)
@@ -71,6 +70,7 @@ struct VerseProgressDetailView: View {
                 } label: {
                     Label("Drill this verse", systemImage: "play.fill")
                 }
+                .buttonStyle(EzberButtonStyle(tone: .primary))
                 .disabled(surah == nil)
             }
         }

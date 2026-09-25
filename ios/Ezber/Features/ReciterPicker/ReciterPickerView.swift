@@ -12,15 +12,16 @@ struct ReciterPickerView: View {
 
     var body: some View {
         List(app.content.allReciters()) { reciter in
-            HStack(spacing: 12) {
+            HStack(spacing: EzberSpacing.x3) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(reciter.name)
-                        .font(.body.weight(.medium))
+                        .font(EzberFont.bodyMedium)
+                        .foregroundStyle(EzberColor.foreground)
                     Text("\(reciter.style) · \(reciter.languageName)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .font(EzberFont.caption)
+                        .foregroundStyle(EzberColor.mutedForeground)
                     Text(downloadLabel(for: reciter))
-                        .font(.caption2)
+                        .font(EzberFont.micro)
                         .foregroundStyle(downloadColor(for: reciter))
                 }
                 Spacer()
@@ -29,13 +30,14 @@ struct ReciterPickerView: View {
                 } label: {
                     Image(systemName: samplingID == reciter.id ? "stop.circle" : "play.circle")
                         .font(.title3)
+                        .foregroundStyle(EzberColor.primary)
                 }
                 .buttonStyle(.borderless)
                 .accessibilityLabel("Play sample from \(reciter.name)")
 
                 if reciter.id == selectedID {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Theme.accent)
+                        .foregroundStyle(EzberColor.primary)
                 }
             }
             .padding(.vertical, 4)
@@ -45,8 +47,11 @@ struct ReciterPickerView: View {
             }
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(EzberColor.background)
         .navigationTitle("Reciters")
         .navigationBarTitleDisplayMode(.inline)
+        .tint(EzberColor.primary)
     }
 
     private func downloadLabel(for reciter: Reciter) -> LocalizedStringKey {
@@ -56,7 +61,7 @@ struct ReciterPickerView: View {
 
     private func downloadColor(for reciter: Reciter) -> Color {
         let state = app.userData.downloadState(reciterID: reciter.id, surahID: 0)
-        return state == .downloaded ? .green : .secondary
+        return state.color
     }
 
     private func toggleSample(_ reciter: Reciter) {

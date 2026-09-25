@@ -39,6 +39,8 @@ struct NotesView: View {
                 }
             }
             .listStyle(.plain)
+            .scrollContentBackground(.hidden)
+            .background(EzberColor.background)
             .overlay {
                 if filteredNotes.isEmpty {
                     EmptyStateView(
@@ -52,6 +54,7 @@ struct NotesView: View {
             }
             .searchable(text: $searchText, prompt: "Search notes")
             .navigationTitle("Notes")
+            .tint(EzberColor.primary)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -81,22 +84,22 @@ private struct NoteRow: View {
     let surah: Surah?
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: EzberSpacing.x3) {
             Image(systemName: note.kind.systemImage)
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(EzberColor.primary)
                 .frame(width: 20)
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(note.verseID.reference)
-                        .font(.caption.monospacedDigit().weight(.semibold))
+                        .font(EzberFont.label.monospacedDigit())
                     if let surah {
                         Text(surah.nameLatin)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(EzberFont.caption)
+                            .foregroundStyle(EzberColor.mutedForeground)
                     }
                 }
                 Text(note.body)
-                    .font(.subheadline)
+                    .font(EzberFont.caption)
                     .lineLimit(3)
                 HStack(spacing: 6) {
                     Text(note.updatedAt.formatted(date: .abbreviated, time: .shortened))
@@ -104,8 +107,8 @@ private struct NoteRow: View {
                         Text("· transcription pending")
                     }
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(EzberFont.micro)
+                .foregroundStyle(EzberColor.mutedForeground)
             }
             Spacer()
         }

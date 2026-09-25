@@ -51,6 +51,24 @@ struct CreditsView: View {
                 Text("SwiftUI and Foundation, Apple.")
             }
 
+            Section("Fonts") {
+                creditRow(
+                    title: "Plus Jakarta Sans",
+                    source: "Tokotype, via Google Fonts",
+                    license: "SIL Open Font License 1.1",
+                    url: "https://fonts.google.com/specimen/Plus+Jakarta+Sans"
+                )
+                creditRow(
+                    title: "Source Serif 4",
+                    source: "Adobe, via Google Fonts",
+                    license: "SIL Open Font License 1.1",
+                    url: "https://fonts.google.com/specimen/Source+Serif+4"
+                )
+                Text("OFL licence texts ship in the app bundle at Resources/Fonts/.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             Section {
                 Text("Provisional attributions. The authoritative license registry lives in licenses/ in this repository and is maintained by the rights work.")
                     .font(.footnote)

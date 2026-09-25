@@ -18,9 +18,12 @@ struct SurahPickerView: View {
             .buttonStyle(.plain)
         }
         .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(EzberColor.background)
         .searchable(text: $searchText, prompt: "Search surahs")
         .navigationTitle("Choose a surah")
         .navigationBarTitleDisplayMode(.inline)
+        .tint(EzberColor.primary)
     }
 
     private var filteredSurahs: [Surah] {

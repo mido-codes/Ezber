@@ -53,16 +53,16 @@ private struct StudyPlayerContent: View {
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: EzberSpacing.x5) {
                     positionHeader
                     verseCard
                     queueCard
                 }
-                .padding()
+                .padding(EzberSpacing.screen)
             }
             transportBar
         }
-        .background(Theme.warmBackground.ignoresSafeArea())
+        .background(EzberColor.background.ignoresSafeArea())
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -87,149 +87,132 @@ private struct StudyPlayerContent: View {
             Spacer()
             Text("\(model.surah.nameLatin) \(model.currentVerse?.reference ?? "")")
         }
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
+        .font(EzberFont.caption)
+        .foregroundStyle(EzberColor.mutedForeground)
     }
 
     private var verseCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: EzberSpacing.x4) {
             if model.preset.display.showArabic,
                let arabic = model.currentVerse?.arabic,
                !arabic.isEmpty {
-                Text(arabic)
-                    .font(.system(size: 30))
-                    .lineSpacing(10)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
+                ArabicText(text: arabic)
             }
 
             if model.preset.display.showTransliteration,
                let transliteration = model.currentVerse?.transliteration,
                !transliteration.isEmpty {
-                TransliterationText(text: transliteration, style: .title2)
+                TransliterationText(text: transliteration, size: .player)
             }
 
             translationBlock
 
-            Divider()
+            Rectangle()
+                .fill(EzberColor.border)
+                .frame(height: 1)
 
             HStack {
-                Label("Repeat \(model.state.currentRepeat) of \(model.state.repeatCount)", systemImage: "repeat")
-                    .font(.subheadline.weight(.medium))
+                EzberAccentChip(text: "Repeat \(model.state.currentRepeat) of \(model.state.repeatCount)")
                 Spacer()
                 if model.isCompleted {
                     Text("Completed")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.green)
+                        .font(EzberFont.label)
+                        .foregroundStyle(EzberColor.primary)
                 }
             }
         }
-        .padding(20)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 
+    // TODO(translation-ui): translation is a resolved-removed surface (captain
+    // decision #1) but is kept here while the placeholder content still has a
+    // translations column; the visual port only restyles it. Remove with the
+    // translation model, not as part of this design pass.
     @ViewBuilder
     private var translationBlock: some View {
         if let translation = model.currentTranslation {
             if model.shouldShowTranslation {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: EzberSpacing.x1) {
                     Text(translation.text)
-                        .font(.callout)
+                        .font(EzberFont.body)
+                        .foregroundStyle(EzberColor.foreground)
                     Text(translation.translator)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .font(EzberFont.micro)
+                        .foregroundStyle(EzberColor.mutedForeground)
                 }
             } else if model.preset.display.translationMode == .tapToReveal {
                 Button("Reveal translation") {
                     model.toggleTranslation()
                 }
-                .font(.footnote)
+                .buttonStyle(EzberButtonStyle(tone: .ghost))
             } else if model.preset.display.translationMode == .hiddenDuringPlayback && model.isPlaying {
                 Text("Translation hidden while playing")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .font(EzberFont.caption)
+                    .foregroundStyle(EzberColor.mutedForeground)
             }
         }
     }
 
     private var queueCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: EzberSpacing.x3) {
             Text("Drill queue")
-                .font(.headline)
-            ProgressView(value: model.state.progress)
-                .tint(Theme.accent)
+                .font(EzberFont.bodyMedium)
+                .foregroundStyle(EzberColor.foreground)
+            EzberProgressBar(value: model.state.progress)
             HStack {
                 Text("Item \(min(model.state.currentIndex + 1, max(1, model.state.totalItemCount))) of \(model.state.totalItemCount)")
                 Spacer()
                 Text("\(model.state.completedItemCount) completed")
             }
-            .font(.caption)
-            .foregroundStyle(.secondary)
+            .font(EzberFont.caption)
+            .foregroundStyle(EzberColor.mutedForeground)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: EzberSpacing.x2) {
                     ForEach(model.queue.verseNumbers, id: \.self) { number in
                         let isCurrent = number == model.currentVerse?.number
                         Text("\(number)")
-                            .font(.caption.monospacedDigit())
+                            .font(EzberFont.label.monospacedDigit())
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(
-                                isCurrent ? AnyShapeStyle(Theme.accent) : AnyShapeStyle(Color.secondary.opacity(0.15)),
+                                isCurrent ? EzberColor.primary : EzberColor.muted,
                                 in: Capsule()
                             )
-                            .foregroundStyle(isCurrent ? Color.white : Color.primary)
+                            .foregroundStyle(
+                                isCurrent ? EzberColor.primaryForeground : EzberColor.foreground
+                            )
                     }
                 }
             }
         }
-        .padding(20)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 
     private var transportBar: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 28) {
-                transportButton("backward.end.fill", label: "Previous verse") {
-                    model.previousVerse()
-                }
-                transportButton("backward.fill", label: "Previous repeat") {
-                    model.previousRepeat()
-                }
-                Button {
-                    model.togglePlayPause()
-                } label: {
-                    Image(systemName: model.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(Theme.accent)
-                }
-                .accessibilityLabel(model.isPlaying ? "Pause" : "Play")
-                transportButton("forward.fill", label: "Next repeat") {
-                    model.nextRepeat()
-                }
-                transportButton("forward.end.fill", label: "Next verse") {
-                    model.nextVerse()
-                }
-            }
+        VStack(spacing: EzberSpacing.x3) {
+            EzberSegmentProgress(total: model.sectionCount, filled: model.positionInSection)
+            EzberTransportControls(
+                isPlaying: model.isPlaying,
+                onPreviousVerse: { model.previousVerse() },
+                onPreviousRepeat: { model.previousRepeat() },
+                onPlayPause: { model.togglePlayPause() },
+                onNextRepeat: { model.nextRepeat() },
+                onNextVerse: { model.nextVerse() }
+            )
             Text(model.reciterName)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(EzberFont.caption)
+                .foregroundStyle(EzberColor.mutedForeground)
         }
-        .padding(.vertical, 12)
-        .padding(.horizontal, 20)
-        .background(.bar)
-    }
-
-    private func transportButton(
-        _ systemImage: String,
-        label: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.title2)
-                .frame(width: 44, height: 44)
+        .padding(.vertical, EzberSpacing.x3)
+        .padding(.horizontal, EzberSpacing.x5)
+        .frame(maxWidth: .infinity)
+        .background(EzberColor.background)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(EzberColor.border)
+                .frame(height: 1)
         }
-        .accessibilityLabel(label)
     }
 }
 
