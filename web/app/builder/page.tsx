@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { buttonClasses } from '@/components/design-system/button'
 import { Card, SectionHeading } from '@/components/design-system/card'
 import { SegmentedChoice, Stepper, ToggleRow } from '@/components/design-system/controls'
+import { ErrorBlock, LoadingBlock } from '@/components/layout/async-state'
 import { AppError, AppHeader, AppSplash, Screen } from '@/components/layout/app-shell'
 import { useApp } from '@/lib/app/app-context'
 import { useAsync } from '@/lib/app/use-async'
@@ -36,7 +37,7 @@ function BuilderInner() {
   const fromParam = Number(params?.get('from') ?? 0)
   const toParam = Number(params?.get('to') ?? 0)
 
-  const { data, loading } = useAsync(async () => {
+  const { data, loading, error: dataError, reload: reloadData } = useAsync(async () => {
     if (!app.content || !app.user) return null
     const surahs = await app.content.surahs()
     const reciters = await app.content.reciters()
@@ -101,7 +102,12 @@ function BuilderInner() {
   }, [data, surahParam, fromParam, toParam, app, editId])
 
   const surah = data?.surahs.find((entry) => entry.id === draft?.surahId) ?? null
-  const { data: ayahs } = useAsync(async () => {
+  const {
+    data: ayahs,
+    loading: ayahsLoading,
+    error: ayahsError,
+    reload: reloadAyahs,
+  } = useAsync(async () => {
     if (!app.content || !draft) return []
     return app.content.ayahs(draft.surahId)
   }, [app.ready, draft?.surahId])
@@ -128,7 +134,23 @@ function BuilderInner() {
   const estimateMs = estimateDurationMs(repetitionTotal, selectedAyahs)
 
   if (app.error) return <AppError message={app.error} />
-  if (!app.ready || loading || !data || !draft) return <AppSplash message={app.startupMessage} />
+  if (!app.ready) return <AppSplash message={app.startupMessage} />
+  if (!loading && !data) {
+    return (
+      <Screen>
+        <AppHeader title={app.t('builder.titleNew')} back />
+        <ErrorBlock
+          message={
+            dataError === 'offline'
+              ? app.t('player.offline')
+              : (dataError ?? app.t('player.loadFailed'))
+          }
+          onRetry={reloadData}
+        />
+      </Screen>
+    )
+  }
+  if (loading || !data || !draft) return <AppSplash message={app.startupMessage} />
   const { t } = app
   const editing = Boolean(data.preset)
 
@@ -289,38 +311,47 @@ function BuilderInner() {
           </span>
         </button>
         {showOverrides ? (
-          <div className="flex flex-col gap-2">
-            {selectedAyahs.map((ayah) => (
-              <div key={ayah.id} className="flex items-center justify-between gap-3">
-                <span className="text-sm text-foreground">{ayah.verse_key}</span>
-                <div className="flex items-center gap-2">
-                  {draft.overrides[ayah.ayah] ? (
-                    <button
-                      type="button"
-                      className="text-xs text-muted-foreground underline"
-                      onClick={() => setOverride(ayah.ayah, draft.repeats)}
-                    >
-                      {t('builder.useDefault')}
-                    </button>
-                  ) : null}
-                  <Stepper
-                    label={`${ayah.verse_key}`}
-                    value={draft.overrides[ayah.ayah] ?? draft.repeats}
-                    onChange={(value) => setOverride(ayah.ayah, value)}
-                  />
+          ayahsLoading ? (
+            <LoadingBlock message={t('player.loadingSurah')} />
+          ) : ayahsError ? (
+            <ErrorBlock
+              message={ayahsError === 'offline' ? t('player.offline') : t('player.loadFailed')}
+              onRetry={reloadAyahs}
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {selectedAyahs.map((ayah) => (
+                <div key={ayah.id} className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-foreground">{ayah.verse_key}</span>
+                  <div className="flex items-center gap-2">
+                    {draft.overrides[ayah.ayah] ? (
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground underline"
+                        onClick={() => setOverride(ayah.ayah, draft.repeats)}
+                      >
+                        {t('builder.useDefault')}
+                      </button>
+                    ) : null}
+                    <Stepper
+                      label={`${ayah.verse_key}`}
+                      value={draft.overrides[ayah.ayah] ?? draft.repeats}
+                      onChange={(value) => setOverride(ayah.ayah, value)}
+                    />
+                  </div>
                 </div>
-              </div>
-            ))}
-            {overrideEntries.length > 0 ? (
-              <button
-                type="button"
-                className="self-start text-xs text-muted-foreground underline"
-                onClick={() => setDraft({ ...draft, overrides: {} })}
-              >
-                {t('builder.resetOverrides')}
-              </button>
-            ) : null}
-          </div>
+              ))}
+              {overrideEntries.length > 0 ? (
+                <button
+                  type="button"
+                  className="self-start text-xs text-muted-foreground underline"
+                  onClick={() => setDraft({ ...draft, overrides: {} })}
+                >
+                  {t('builder.resetOverrides')}
+                </button>
+              ) : null}
+            </div>
+          )
         ) : null}
       </Card>
 
@@ -371,9 +402,11 @@ function BuilderInner() {
 
       <div className="flex flex-col gap-2">
         <p className="text-center text-sm text-muted-foreground">
-          {t('builder.estimated', { min: formatMinutes(estimateMs), reps: repetitionTotal })}
+          {ayahsLoading || ayahsError
+            ? '…'
+            : t('builder.estimated', { min: formatMinutes(estimateMs), reps: repetitionTotal })}
         </p>
-        {estimateMs > 30 * 60_000 ? (
+        {!ayahsLoading && !ayahsError && estimateMs > 30 * 60_000 ? (
           <p className="text-center text-xs text-destructive">{t('builder.longWarning')}</p>
         ) : null}
       </div>

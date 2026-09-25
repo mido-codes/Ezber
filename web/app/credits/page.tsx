@@ -3,12 +3,26 @@
 import { Card, SectionHeading } from '@/components/design-system/card'
 import { AppError, AppHeader, AppSplash, Screen } from '@/components/layout/app-shell'
 import { useApp } from '@/lib/app/app-context'
+import { useAsync } from '@/lib/app/use-async'
 
 export default function CreditsPage() {
   const app = useApp()
+
+  // Licences live in the export's licences.json; load them lazily so the boot
+  // index stays small. Placeholder mode already carries them in its summary.
+  const { data: loadedLicenses } = useAsync(async () => {
+    if (!app.content) return null
+    return app.content.licenses()
+  }, [app.ready, app.revision])
+
   if (app.error) return <AppError message={app.error} />
   if (!app.ready || !app.summary) return <AppSplash message={app.startupMessage} />
   const { t, summary } = app
+  const licenses = loadedLicenses && loadedLicenses.length > 0 ? loadedLicenses : summary.licenses
+  const attributionLines =
+    summary.attribution.length > 0
+      ? summary.attribution
+      : [...new Set(licenses.map((license) => license.attribution).filter((line): line is string => Boolean(line)))]
 
   const sections = [
     { title: t('credits.quranText'), body: t('credits.quranTextBody') },
@@ -37,10 +51,10 @@ export default function CreditsPage() {
         </Card>
       ))}
 
-      {summary.licenses.length > 0 ? (
+      {licenses.length > 0 ? (
         <Card className="flex flex-col gap-3">
           <SectionHeading title={t('credits.licenses')} />
-          {summary.licenses.map((license) => (
+          {licenses.map((license) => (
             <div key={license.id} className="flex flex-col gap-0.5">
               <span className="text-sm font-medium text-foreground">{license.name}</span>
               {license.attribution ? (
@@ -61,10 +75,10 @@ export default function CreditsPage() {
         </Card>
       ) : null}
 
-      {summary.attribution.length > 0 ? (
+      {attributionLines.length > 0 ? (
         <Card className="flex flex-col gap-2">
           <SectionHeading title={t('credits.attribution')} />
-          {summary.attribution.map((line) => (
+          {attributionLines.map((line) => (
             <p key={line} className="text-xs leading-relaxed text-muted-foreground">
               {line}
             </p>

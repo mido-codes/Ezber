@@ -9,7 +9,7 @@ import { Card, EmptyState, SectionHeading } from '@/components/design-system/car
 import { AccentChip } from '@/components/design-system/chips'
 import { PresetCard } from '@/components/design-system/preset-card'
 import { Meter } from '@/components/design-system/meter'
-import { buildDrillQueue } from '@/lib/player/queue'
+import { resumePointFor } from '@/lib/player/queue'
 import { AppError, AppHeader, AppSplash, PlaceholderBanner, Screen } from '@/components/layout/app-shell'
 import { useApp } from '@/lib/app/app-context'
 import type { SurahRow } from '@/lib/content/types'
@@ -70,27 +70,27 @@ export default function HomePage() {
         const session = await user.activeSession(lastPreset.id)
         const planState = await user.planState(lastPreset.id)
         const overrides = await user.presetOverrides(lastPreset.id)
-        const ayahs = await content.ayahs(lastPreset.surah_id)
-        const queue = buildDrillQueue(lastPreset, overrides, ayahs)
         const verseTotal = lastPreset.to_ayah - lastPreset.from_ayah + 1
-        if (queue.length > 0) {
-          const index = planState ? planState.plan_index % queue.length : 0
-          const item = queue[index]
-          resume = {
-            verse: item.ayah.ayah,
-            repeat: item.repeat_index,
-            verseTotal,
-            repeatTotal: item.repeat_count,
-          }
-          const totalRepetitions =
-            lastPreset.section_repeats === 0
-              ? Math.max(queue.length, (session?.repetitions ?? 0) + queue.length)
-              : queue.length * Math.max(1, lastPreset.section_repeats)
-          const done = session?.repetitions ?? 0
-          ratio = done > 0 ? Math.min(1, done / Math.max(1, totalRepetitions)) : index > 0 ? 0.05 : 0
-        } else {
-          resume = { verse: lastPreset.from_ayah, repeat: 1, verseTotal, repeatTotal: lastPreset.repeat_count }
+        // Resume without touching content: the plan index plus the preset's
+        // repeat counts are enough to show verse/repeat on the card.
+        const point = resumePointFor(lastPreset, overrides, planState?.plan_index ?? 0)
+        resume = {
+          verse: point.verse,
+          repeat: point.repeat,
+          verseTotal,
+          repeatTotal: point.repeatTotal,
         }
+        const totalRepetitions =
+          lastPreset.section_repeats === 0
+            ? Math.max(point.totalInPass, (session?.repetitions ?? 0) + point.totalInPass)
+            : point.totalInPass * Math.max(1, lastPreset.section_repeats)
+        const done = session?.repetitions ?? 0
+        ratio =
+          done > 0
+            ? Math.min(1, done / Math.max(1, totalRepetitions))
+            : point.indexInPass > 0
+              ? 0.05
+              : 0
       }
 
       const review = await user.reviewQueue(4)

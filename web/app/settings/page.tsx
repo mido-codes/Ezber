@@ -2,15 +2,17 @@
 
 import { Download, RefreshCw, Trash2, Upload } from 'lucide-react'
 import Link from 'next/link'
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { buttonClasses } from '@/components/design-system/button'
 import { Card, SectionHeading } from '@/components/design-system/card'
 import { SegmentedChoice, Stepper, ToggleRow } from '@/components/design-system/controls'
+import { ErrorBlock } from '@/components/layout/async-state'
 import { AppError, AppHeader, AppSplash, Screen } from '@/components/layout/app-shell'
 import { useApp, type ThemeSetting } from '@/lib/app/app-context'
 import type { Language } from '@/lib/i18n'
 import { downloadSurahAudio } from '@/lib/pwa/downloads'
 import { userStorageEstimate } from '@/lib/user/repository'
+import type { CacheStats } from '@/lib/content/types'
 import type { UserExport } from '@/lib/user/types'
 
 const APP_VERSION = '0.1.0'
@@ -35,10 +37,17 @@ export default function SettingsPage() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [downloadState, setDownloadState] = useState<string | null>(null)
+  const [cache, setCache] = useState<CacheStats | null>(null)
+
+  const loadCacheStats = useCallback(async () => {
+    if (!app.content) return
+    setCache(await app.content.cacheStats())
+  }, [app.content])
 
   useEffect(() => {
     void userStorageEstimate().then(setStorage)
-  }, [app.revision])
+    void loadCacheStats()
+  }, [app.revision, loadCacheStats])
 
   useEffect(() => {
     const handler = (event: Event) => {
@@ -239,32 +248,87 @@ export default function SettingsPage() {
       <Card className="flex flex-col gap-4">
         <SectionHeading title={t('settings.content')} />
         <p className="text-sm leading-relaxed text-muted-foreground">
-          {summary.mode === 'bundle' ? t('settings.contentReady') : t('settings.contentPlaceholder')}
+          {summary.mode === 'bundle'
+            ? t('settings.contentReady')
+            : t('settings.contentPlaceholder')}
         </p>
-        <p className="text-xs text-muted-foreground">
-          {t('settings.bundleCounts', {
-            ayahs: summary.counts.ayahs ?? 0,
-            surahs: summary.counts.surahs ?? 0,
-            reciters: summary.counts.reciters ?? 0,
-          })}
-        </p>
-        <button
-          type="button"
-          className={buttonClasses('outline', 'sm', false) + ' self-start'}
-          onClick={async () => {
-            try {
-              const next = await app.content!.reimport()
-              setMessage(`Content: ${next.bundle_id}`)
-              app.refresh()
-            } catch (error) {
-              setMessage(error instanceof Error ? error.message : String(error))
-            }
-          }}
-        >
-          <RefreshCw className="size-4" aria-hidden />
-          {t('settings.reimport')}
-        </button>
-        <p className="text-xs text-muted-foreground">{t('settings.reimportHint')}</p>
+        <div className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+          <span>
+            {summary.source === 'network'
+              ? t('settings.contentSourceNetwork')
+              : summary.source === 'cache'
+                ? t('settings.contentSourceCache')
+                : t('settings.contentSourcePlaceholder')}
+          </span>
+          <span>
+            {t('settings.bundleCounts', {
+              ayahs: summary.counts.ayahs ?? 0,
+              surahs: summary.counts.surahs ?? 0,
+              reciters: summary.counts.reciters ?? 0,
+            })}
+          </span>
+          {summary.bundle_id ? <span>{summary.bundle_id}</span> : null}
+        </div>
+
+        {summary.problem ? (
+          <ErrorBlock
+            message={summary.problem.message}
+            onRetry={async () => {
+              await app.content!.reloadIndex()
+              app.refreshSummary()
+              await loadCacheStats()
+            }}
+          />
+        ) : null}
+
+        <div className="flex flex-col gap-1 border-t border-border/60 pt-3">
+          <span className="text-sm font-medium text-foreground">{t('settings.cacheTitle')}</span>
+          <p className="text-xs leading-relaxed text-muted-foreground">{t('settings.cacheBody')}</p>
+          <p className="text-xs text-muted-foreground">
+            {summary.cached_surahs === 0 && summary.cached_segment_sets === 0
+              ? t('settings.cacheEmpty')
+              : t('settings.cacheStats', {
+                  surahs: summary.cached_surahs,
+                  segments: summary.cached_segment_sets,
+                  ayahs: cache?.ayah_rows ?? 0,
+                })}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className={buttonClasses('outline', 'sm', false)}
+            onClick={async () => {
+              try {
+                await app.content!.reloadIndex()
+                app.refreshSummary()
+                await loadCacheStats()
+                setMessage(t('settings.indexRefreshed'))
+              } catch (error) {
+                setMessage(error instanceof Error ? error.message : String(error))
+              }
+            }}
+          >
+            <RefreshCw className="size-4" aria-hidden />
+            {t('settings.refreshIndex')}
+          </button>
+          <button
+            type="button"
+            className={buttonClasses('destructive', 'sm', false)}
+            onClick={async () => {
+              await app.content!.clearContentCache()
+              app.refreshSummary()
+              await loadCacheStats()
+              setMessage(t('settings.cacheCleared'))
+            }}
+          >
+            <Trash2 className="size-4" aria-hidden />
+            {t('settings.clearCache')}
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground">{t('settings.refreshIndexHint')}</p>
+        <p className="text-xs text-muted-foreground">{t('settings.clearCacheBody')}</p>
       </Card>
 
       <Card className="flex flex-col gap-3">

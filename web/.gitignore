@@ -2,5 +2,10 @@ node_modules/
 .next/
 out/
 .test-build/
+public/content/
 *.tsbuildinfo
 next-env.d.ts
+
+# Next.js writes its own agent-rule files into the project on dev/build.
+AGENTS.md
+CLAUDE.md

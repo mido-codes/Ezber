@@ -3,11 +3,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-/** Tiny data loader with stale-result protection. */
+/**
+ * Tiny data loader with stale-result protection and a manual `reload()` for
+ * per-view retry buttons.
+ */
 export function useAsync<T>(loader: () => Promise<T>, deps: unknown[], initial?: T) {
   const [data, setData] = useState<T | undefined>(initial)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [tick, setTick] = useState(0)
   const tokenRef = useRef(0)
 
   useEffect(() => {
@@ -28,9 +32,11 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[], initial?:
       })
     // The loader is intentionally keyed by the caller-provided deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, deps)
+  }, [tick, ...deps])
 
-  return { data, loading, error }
+  const reload = () => setTick((value) => value + 1)
+
+  return { data, loading, error, reload }
 }
 
 export function useQueryParam(name: string): string | null {

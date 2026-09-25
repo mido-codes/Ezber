@@ -96,10 +96,17 @@ export function AppError({ message }: { message: string }) {
 export function PlaceholderBanner() {
   const { summary, t } = useApp()
   if (!summary || summary.mode !== 'placeholder') return null
+  const problem = summary.problem
   return (
-    <div className="flex items-start gap-2 rounded-2xl border border-border bg-secondary px-4 py-3 text-xs leading-relaxed text-secondary-foreground">
+    <div
+      className={
+        problem
+          ? 'flex items-start gap-2 rounded-2xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-xs leading-relaxed text-destructive'
+          : 'flex items-start gap-2 rounded-2xl border border-border bg-secondary px-4 py-3 text-xs leading-relaxed text-secondary-foreground'
+      }
+    >
       <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-      <p>{t('settings.contentPending')}</p>
+      <p>{problem?.message ?? t('settings.contentPending')}</p>
     </div>
   )
 }

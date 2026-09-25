@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { buildDrillQueue, estimateDurationMs, repeatCountFor, totalRepetitions } from '../lib/player/queue'
+import { buildDrillQueue, estimateDurationMs, repeatCountFor, resumePointFor, totalRepetitions } from '../lib/player/queue'
 import type { AyahRow } from '../lib/content/types'
 
 function ayah(surah: number, number: number): AyahRow {
@@ -45,3 +45,29 @@ test('estimates a duration from the repetition plan', () => {
   assert.ok(estimate > 0)
   assert.ok(estimate < 60 * 60_000)
 })
+
+test('maps a plan index to a verse and repeat without content', () => {
+  const preset = { from_ayah: 1, to_ayah: 3, repeat_count: 5 }
+  assert.deepEqual(
+    pick(resumePointFor(preset, {}, 0)),
+    { verse: 1, repeat: 1, repeatTotal: 5 },
+  )
+  assert.deepEqual(
+    pick(resumePointFor(preset, {}, 7)),
+    { verse: 2, repeat: 3, repeatTotal: 5 },
+  )
+  // Per-verse overrides shift the mapping.
+  assert.deepEqual(
+    pick(resumePointFor(preset, { 1: 2 }, 2)),
+    { verse: 2, repeat: 1, repeatTotal: 5 },
+  )
+  // Past the end of a pass, the index wraps to the next pass.
+  assert.deepEqual(
+    pick(resumePointFor(preset, {}, 15)),
+    { verse: 1, repeat: 1, repeatTotal: 5 },
+  )
+})
+
+function pick(point: ReturnType<typeof resumePointFor>) {
+  return { verse: point.verse, repeat: point.repeat, repeatTotal: point.repeatTotal }
+}

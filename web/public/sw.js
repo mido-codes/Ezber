@@ -1,7 +1,7 @@
 /* Ezber service worker: app shell + downloaded content, offline first. */
 /* eslint-disable no-restricted-globals */
 
-const VERSION = 'v1'
+const VERSION = 'v4'
 const SHELL_CACHE = `ezber-shell-${VERSION}`
 const RUNTIME_CACHE = `ezber-runtime-${VERSION}`
 const AUDIO_CACHE = 'ezber-audio-v1'
@@ -9,6 +9,7 @@ const AUDIO_CACHE = 'ezber-audio-v1'
 const SHELL_URLS = [
   '/',
   '/browse/',
+  '/browse/section/',
   '/builder/',
   '/presets/',
   '/player/',
@@ -32,8 +33,20 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(SHELL_CACHE)
+      const urls = [...SHELL_URLS]
+      // The generated manifest lists the hashed Next.js chunks and fonts, so
+      // every route's HTML can hydrate offline.
+      try {
+        const response = await fetch('/precache-manifest.json', { cache: 'reload' })
+        if (response.ok) {
+          const manifest = await response.json()
+          if (Array.isArray(manifest.assets)) urls.push(...manifest.assets)
+        }
+      } catch {
+        // Development builds have no manifest; the route shells still work.
+      }
       await Promise.allSettled(
-        SHELL_URLS.map(async (url) => {
+        urls.map(async (url) => {
           try {
             const response = await fetch(url, { cache: 'reload' })
             if (response.ok) await cache.put(url, response)
@@ -69,6 +82,26 @@ self.addEventListener('activate', (event) => {
 
 function isAudioRequest(url) {
   return /\.(mp3|m4a|ogg|opus|wav|aac)(\?|$)/i.test(url.pathname)
+}
+
+/** Bound a network attempt so an offline device fails over to cache quickly. */
+async function fetchWithTimeout(input, init, timeoutMs) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(input, { ...(init ?? {}), signal: controller.signal })
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+async function matchAnyCache(request, names) {
+  for (const name of names) {
+    const cache = await caches.open(name)
+    const hit = await cache.match(request)
+    if (hit) return hit
+  }
+  return undefined
 }
 
 async function matchAudio(url) {
@@ -129,34 +162,46 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Content bundle: stale-while-revalidate so updates arrive without blocking.
+  // Content bundle: cached copy first, then a bounded network refresh.
   if (url.origin === self.location.origin && url.pathname.startsWith('/content/')) {
     event.respondWith(
       (async () => {
         const cache = await caches.open(RUNTIME_CACHE)
         const cached = await cache.match(request)
-        const network = fetch(request)
-          .then(async (response) => {
-            if (response.ok) await cache.put(request, response.clone())
-            return response
-          })
-          .catch(() => cached)
-        return cached || network
+        if (cached) {
+          // Refresh in the background without delaying the response.
+          fetchWithTimeout(request, {}, 15000)
+            .then(async (response) => {
+              if (response.ok) await cache.put(request, response.clone())
+            })
+            .catch(() => {})
+          return cached
+        }
+        try {
+          const response = await fetchWithTimeout(request, {}, 15000)
+          if (response.ok) await cache.put(request, response.clone())
+          return response
+        } catch (error) {
+          const shellHit = await matchAnyCache(request, [SHELL_CACHE])
+          if (shellHit) return shellHit
+          throw error
+        }
       })(),
     )
     return
   }
 
-  // Same-origin static assets: cache-first with runtime fill.
+  // Same-origin assets: cached shell first (precached chunks hydrate offline),
+  // then the runtime cache, then a bounded network fill.
   if (url.origin === self.location.origin) {
     event.respondWith(
       (async () => {
-        const cache = await caches.open(RUNTIME_CACHE)
-        const cached = await cache.match(request)
+        const cached = await matchAnyCache(request, [SHELL_CACHE, RUNTIME_CACHE])
         if (cached) return cached
         try {
-          const response = await fetch(request)
+          const response = await fetchWithTimeout(request, {}, 8000)
           if (response.ok && (url.pathname.startsWith('/_next/') || url.pathname.startsWith('/icons/') || url.pathname.startsWith('/fonts/'))) {
+            const cache = await caches.open(RUNTIME_CACHE)
             await cache.put(request, response.clone())
           }
           return response
