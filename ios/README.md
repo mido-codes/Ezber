@@ -26,13 +26,14 @@ editing the Xcode project; the synchronized group picks them up.
 
 | Path | Contents |
 | --- | --- |
-| `Ezber/App/` | App entry, environment, settings, root tab navigation, theme |
+| `Ezber/App/` | App entry, environment, settings, root tab navigation |
+| `Ezber/DesignSystem/` | Ported design tokens and reusable components (see `data/ezber-design-review/report.md` in the firstmate workspace) |
 | `Ezber/Models/` | Preset, drill queue (verse × repetition), progress, notes, reciter, surah/verse |
 | `Ezber/Persistence/` | SQLite wrapper, schema, content store, user data store, in-memory fallbacks |
 | `Ezber/Services/` | Audio session, drill session, voice memo protocols + stubs |
 | `Ezber/Placeholder/` | Placeholder surahs, verses, presets, progress, notes |
 | `Ezber/Features/` | One folder per screen |
-| `Ezber/Resources/` | Asset catalog and String Catalog (English source, Turkish translations) |
+| `Ezber/Resources/` | Asset catalog, String Catalog (English source, Turkish translations) and bundled OFL fonts |
 
 ## Screens
 

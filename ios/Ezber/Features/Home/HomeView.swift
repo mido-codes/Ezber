@@ -18,7 +18,7 @@ struct HomeView: View {
         let _ = app.dataRevision
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: EzberSpacing.x5) {
                     if let preset = app.userData.lastUsedPreset() {
                         ContinueCard(
                             preset: preset,
@@ -38,9 +38,9 @@ struct HomeView: View {
                     quickActions
                     progressGlance
                 }
-                .padding()
+                .padding(EzberSpacing.screen)
             }
-            .background(Theme.warmBackground.ignoresSafeArea())
+            .background(EzberColor.background.ignoresSafeArea())
             .navigationTitle("Ezber")
             .navigationDestination(for: HomeRoute.self) { route in
                 destination(for: route)
@@ -76,7 +76,7 @@ struct HomeView: View {
     }
 
     private var quickActions: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: EzberSpacing.x3) {
             QuickActionButton(title: "New drill", systemImage: "plus.circle") {
                 path.append(.surahPicker)
             }
@@ -90,18 +90,17 @@ struct HomeView: View {
         let progress = app.userData.allProgress()
         let repetitions = progress.reduce(0) { $0 + $1.repetitionsCompleted }
         let strong = progress.filter { $0.state == .strong }.count
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: EzberSpacing.x3) {
             Text("Progress glance")
-                .font(.headline)
-            HStack(spacing: 24) {
+                .font(EzberFont.bodyMedium)
+                .foregroundStyle(EzberColor.foreground)
+            HStack(spacing: EzberSpacing.x6) {
                 GlanceMetric(value: "\(repetitions)", label: "repetitions")
                 GlanceMetric(value: "\(progress.count)", label: "verses touched")
                 GlanceMetric(value: "\(strong)", label: "strong")
             }
         }
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 }
 
@@ -120,44 +119,34 @@ private struct ContinueCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Continue")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: EzberSpacing.x4) {
+            EzberSectionHeading(
+                eyebrow: "Continue",
+                title: preset.name,
+                description: surah.map { "\($0.nameLatin) \(preset.range.displayString)" }
+            )
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(preset.name)
-                    .font(.title2.weight(.semibold))
-                if let surah {
-                    Text("\(surah.nameLatin) \(preset.range.displayString)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            HStack(spacing: 16) {
+            HStack(spacing: EzberSpacing.x4) {
                 Label("Verse \(positionInSection) of \(preset.range.count)", systemImage: "text.book.closed")
                 Label("Repeat \(resume.repeatIndex) of \(preset.repeats.repeats(forVerse: resume.verseNumber))", systemImage: "repeat")
             }
-            .font(.footnote)
-            .foregroundStyle(.secondary)
+            .font(EzberFont.caption)
+            .foregroundStyle(EzberColor.mutedForeground)
 
             if let session, session.totalItems > 0 {
-                ProgressView(value: session.completionRatio)
-                    .tint(Theme.accent)
+                EzberProgressBar(value: session.completionRatio)
             }
 
             Button(action: onContinue) {
-                Label("Continue drill", systemImage: "play.fill")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
+                HStack(spacing: EzberSpacing.x2) {
+                    Image(systemName: "play.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                    Text("Continue drill")
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.accent)
+            .buttonStyle(EzberButtonStyle(tone: .primary, size: .large, expands: true))
         }
-        .padding(20)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 }
 
@@ -165,26 +154,22 @@ private struct WelcomeCard: View {
     let onStart: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Welcome")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-            Text("Start a drill")
-                .font(.title2.weight(.semibold))
-            Text("Choose a surah and a short section, set your repeats, and listen verse by verse.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: EzberSpacing.x4) {
+            EzberSectionHeading(
+                eyebrow: "Welcome",
+                title: "Start a drill",
+                description: "Choose a surah and a short section, set your repeats, and listen verse by verse."
+            )
             Button(action: onStart) {
-                Label("Choose a surah", systemImage: "book")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 6)
+                HStack(spacing: EzberSpacing.x2) {
+                    Image(systemName: "book")
+                        .font(.system(size: 20, weight: .semibold))
+                    Text("Choose a surah")
+                }
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.accent)
+            .buttonStyle(EzberButtonStyle(tone: .primary, size: .large, expands: true))
         }
-        .padding(20)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 20))
+        .ezberCard()
     }
 }
 
@@ -195,15 +180,16 @@ private struct QuickActionButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: EzberSpacing.x2) {
                 Image(systemName: systemImage)
-                    .font(.title3)
+                    .font(.system(size: 20))
+                    .foregroundStyle(EzberColor.primary)
                 Text(title)
-                    .font(.subheadline.weight(.medium))
+                    .font(EzberFont.bodyMedium)
+                    .foregroundStyle(EzberColor.foreground)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(16)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
+            .ezberCard(padding: EzberSpacing.cardCompact)
         }
         .buttonStyle(.plain)
     }
@@ -216,10 +202,11 @@ private struct GlanceMetric: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value)
-                .font(.title3.monospacedDigit().weight(.semibold))
+                .font(EzberFont.title.monospacedDigit())
+                .foregroundStyle(EzberColor.foreground)
             Text(LocalizedStringKey(label))
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(EzberFont.caption)
+                .foregroundStyle(EzberColor.mutedForeground)
         }
     }
 }

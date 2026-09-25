@@ -6,32 +6,20 @@ struct EmptyStateView: View {
     let message: String
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: EzberSpacing.x3) {
             Image(systemName: systemImage)
                 .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(EzberColor.mutedForeground)
             Text(title)
-                .font(.headline)
+                .font(EzberFont.title)
+                .foregroundStyle(EzberColor.foreground)
             Text(message)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .font(EzberFont.caption)
+                .foregroundStyle(EzberColor.mutedForeground)
                 .multilineTextAlignment(.center)
         }
-        .padding(32)
+        .padding(EzberSpacing.x8)
         .frame(maxWidth: .infinity)
-    }
-}
-
-struct StateBadge: View {
-    let state: VerseState
-
-    var body: some View {
-        Text(LocalizedStringKey(state.label))
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(state.color.opacity(0.15), in: Capsule())
-            .foregroundStyle(state.color)
     }
 }
 
@@ -42,10 +30,13 @@ struct InfoRow: View {
     var body: some View {
         HStack {
             Text(LocalizedStringKey(title))
-                .foregroundStyle(.secondary)
+                .font(EzberFont.body)
+                .foregroundStyle(EzberColor.mutedForeground)
             Spacer()
             Text(value)
+                .font(EzberFont.body)
                 .multilineTextAlignment(.trailing)
+                .foregroundStyle(EzberColor.foreground)
         }
     }
 }
@@ -54,53 +45,74 @@ struct SurahRow: View {
     let surah: Surah
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: EzberSpacing.x3) {
             Text("\(surah.id)")
-                .font(.footnote.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(EzberFont.caption.monospacedDigit())
+                .foregroundStyle(EzberColor.mutedForeground)
                 .frame(width: 28, alignment: .trailing)
             VStack(alignment: .leading, spacing: 2) {
                 Text(surah.nameLatin)
-                    .font(.body.weight(.medium))
+                    .font(EzberFont.bodyMedium)
+                    .foregroundStyle(EzberColor.foreground)
                 Text(surah.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(EzberFont.caption)
+                    .foregroundStyle(EzberColor.mutedForeground)
             }
             Spacer()
             Text(surah.nameArabic)
-                .font(.title3)
-                .foregroundStyle(.secondary)
+                .font(.system(size: EzberFont.arabicPoints))
+                .foregroundStyle(EzberColor.mutedForeground)
         }
         .contentShape(Rectangle())
     }
 }
 
-/// The primary reading surface: transliteration in a serif face.
+/// The primary reading surface: transliteration in the kit's serif face
+/// (Source Serif 4), sized from the kit's 16/20/30/48 pt scale.
 struct TransliterationText: View {
     let text: String
-    var style: Font.TextStyle = .title2
+    var size: EzberFont.TransliterationSize = .player
 
     var body: some View {
         Text(text)
-            .font(Theme.transliteration(style))
-            .lineSpacing(8)
+            .font(EzberFont.transliteration(size))
+            .lineSpacing(size.lineSpacing)
+            .foregroundStyle(EzberColor.foreground)
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
+/// Arabic script: a first-class reading surface per the journey decisions. The
+/// kit carries no Arabic token, so the scaffold's size and leading are named
+/// here for a single tuning point.
+struct ArabicText: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: EzberFont.arabicPoints))
+            .lineSpacing(EzberFont.arabicLineSpacing)
+            .foregroundStyle(EzberColor.foreground)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+}
+
 #Preview {
-    VStack(spacing: 24) {
+    VStack(alignment: .leading, spacing: EzberSpacing.x6) {
         EmptyStateView(
             systemImage: "books.vertical",
             title: "No presets yet",
             message: "Build a drill from a surah and section to see it here."
         )
-        HStack {
-            StateBadge(state: .new)
-            StateBadge(state: .learning)
-            StateBadge(state: .review)
-            StateBadge(state: .strong)
+        HStack(spacing: EzberSpacing.x2) {
+            VerseStateChip(state: .new)
+            VerseStateChip(state: .learning)
+            VerseStateChip(state: .review)
+            VerseStateChip(state: .strong)
         }
+        TransliterationText(text: "'Allamahul-bayaan", size: .player)
+        ArabicText(text: "عَلَّمَ ٱلْقُرْآنَ")
     }
-    .padding()
+    .padding(EzberSpacing.screen)
+    .background(EzberColor.background)
 }

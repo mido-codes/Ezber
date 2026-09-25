@@ -6,6 +6,10 @@ struct RootView: View {
     @Environment(AppEnvironment.self) private var app
 
     var body: some View {
+        // TODO(open-call: tab-shell): the kit's floating 4-tab bar vs the
+        // scaffold's native 5-tab TabView is one of the three open captain
+        // calls (report §8). The visual port only re-tints the native shell;
+        // the tab shape and order are deliberately unchanged.
         TabView {
             HomeView()
                 .tabItem { Label("Home", systemImage: "house") }
@@ -18,7 +22,7 @@ struct RootView: View {
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
-        .tint(Theme.accent)
+        .tint(EzberColor.primary)
         .preferredColorScheme(app.settings.themeMode.colorScheme)
         .environment(\.locale, Locale(identifier: app.settings.language.localeIdentifier))
     }

@@ -52,11 +52,11 @@ struct SectionPickerView: View {
                 Section("Preview") {
                     if let verse = previewVerse {
                         if !verse.transliteration.isEmpty {
-                            TransliterationText(text: verse.transliteration, style: .body)
+                            TransliterationText(text: verse.transliteration, size: .detail)
                         }
                         Text(verse.reference)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .font(EzberFont.caption)
+                            .foregroundStyle(EzberColor.mutedForeground)
                     }
                 }
             } else {
@@ -67,6 +67,7 @@ struct SectionPickerView: View {
                 )
             }
         }
+        .tint(EzberColor.primary)
         .navigationTitle("Choose a section")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {

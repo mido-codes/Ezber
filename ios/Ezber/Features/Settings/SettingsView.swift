@@ -61,6 +61,8 @@ struct SettingsView: View {
                 }
 
                 Section("Language") {
+                    // Launch language: English-first, resolved 2026-09-25 (report
+                    // §8); the picker still lets the learner switch to Turkish.
                     Picker("Interface language", selection: $settings.language) {
                         ForEach(AppSettings.Language.allCases) { language in
                             Text(language.label).tag(language)
@@ -75,6 +77,8 @@ struct SettingsView: View {
                     } else {
                         ForEach(downloads) { download in
                             HStack {
+                                Image(systemName: download.state.systemImage)
+                                    .foregroundStyle(download.state.color)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(reciterName(for: download))
                                     Text("Surah \(download.surahID)")
@@ -111,6 +115,7 @@ struct SettingsView: View {
                     InfoRow(title: "Content", value: "Placeholder data")
                 }
             }
+            .tint(EzberColor.primary)
             .navigationTitle("Settings")
             .sheet(isPresented: $showReciterPicker) {
                 NavigationStack {

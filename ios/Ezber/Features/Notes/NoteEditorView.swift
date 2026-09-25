@@ -79,6 +79,7 @@ struct NoteEditorView: View {
                     .disabled(noteBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
             }
+            .tint(EzberColor.primary)
             .navigationTitle(existingID == nil ? "New note" : "Edit note")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
