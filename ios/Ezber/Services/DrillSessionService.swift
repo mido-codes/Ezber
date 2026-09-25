@@ -11,6 +11,23 @@ struct DrillSessionConfiguration: Hashable {
     }
 }
 
+/// Presentation context for the lock screen that only the study player knows:
+/// the engine can derive the current verse from the queue, but not the preset
+/// and reciter names. Engines that do not publish metadata ignore it.
+struct DrillNowPlayingDescription: Equatable {
+    var presetName: String
+    var surahName: String
+    var reciterName: String
+    var artworkName: String?
+
+    init(presetName: String, surahName: String, reciterName: String, artworkName: String? = nil) {
+        self.presetName = presetName
+        self.surahName = surahName
+        self.reciterName = reciterName
+        self.artworkName = artworkName
+    }
+}
+
 enum DrillSessionStatus: Equatable {
     case idle
     case playing
@@ -74,6 +91,15 @@ protocol DrillSessionService: AnyObject {
     func seek(to item: DrillItem.ID)
     func restart()
     func stop()
+
+    /// Additive: describes what the lock screen should show for the queue. The
+    /// default implementation below does nothing, so engines that publish no
+    /// metadata stay conforming without changes.
+    func setNowPlayingDescription(_ description: DrillNowPlayingDescription?)
+}
+
+extension DrillSessionService {
+    func setNowPlayingDescription(_ description: DrillNowPlayingDescription?) {}
 }
 
 /// Simulated playback: advances through the queue on a timer so the whole flow

@@ -2,8 +2,9 @@
 
 A native SwiftUI skeleton for the Ezber iPhone app, built from the product brief in
 [`../README.md`](../README.md). It is a click-through scaffold: every main screen
-exists and navigates, backed by placeholder data and stub services. No real audio
-playback and no CarPlay in this slice.
+exists and navigates, backed by placeholder data. The study player runs on a real
+AVFoundation drill engine with background audio and lock-screen controls; the
+other screens still use stub services. No CarPlay in this slice.
 
 ## Requirements
 
@@ -43,9 +44,24 @@ Notes · Settings · Credits and licenses.
 
 The study player is driven by `DrillSessionService`: a drill is a queue of
 `DrillItem` values (one per verse × repetition), and progress/resume points are
-recorded at every repeat boundary. `StubDrillSessionService` simulates playback
-with a timer so the flow is clickable; replacing it with a real AVPlayer-based
-implementation should not change the views.
+recorded at every repeat boundary. `AVDrillSessionService` plays each item with
+`AVAudioPlayer`; `StubDrillSessionService` still simulates playback with a timer
+for previews and tests. The views only see the protocol.
+
+## Playback
+
+`LiveAudioSessionService` owns the `AVAudioSession` and the system integration:
+`.playback`/`.spokenAudio` so a drill keeps playing with the silent switch on and
+the screen locked (`UIBackgroundModes: audio` is set in the Xcode project), Now
+Playing metadata, lock-screen and Control Center commands (next/previous track =
+next/previous verse, skip forward/back = next/previous repeat), and handling for
+interruptions, route changes and media-services resets.
+
+`AVDrillSessionService` walks the queue and keeps the stub's transport semantics:
+every repeat boundary reports completion so `StudyPlayerModel` persists the resume
+point, and `pause between repeats` and `loop until stopped` from the preset are
+honored. Audio comes from a `DrillAudioResolving`; a content-backed resolver can
+replace the placeholder one without touching the engine.
 
 ## Stores
 
@@ -61,11 +77,13 @@ When it lands, replace the DDL and row mapping there.
 
 ## What is stubbed
 
-- Audio playback and background audio: `StubAudioSessionService` only tracks state.
-- Drill playback: `StubDrillSessionService` advances on a 4-second timer.
+- Recitation audio: no recording may be redistributed yet (the content pipeline
+  enables zero reciters), so `PlaceholderDrillAudioResolver` plays a bundled
+  `verse-<surah>-<ayah>` file when present and otherwise generates a quiet tone
+  per verse in Caches.
 - Voice memos: `StubVoiceMemoService` records nothing; notes can be marked as
   voice memos with transcription pending.
 - Downloads/storage management, export, and per-surah reciter availability.
-- CarPlay and lock-screen/Now Playing integration (out of scope for this slice).
+- CarPlay (out of scope for this slice).
 - Credits attributions are provisional; the authoritative license registry is
   owned by the rights work under `licenses/`.

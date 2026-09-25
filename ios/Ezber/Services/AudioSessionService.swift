@@ -1,7 +1,7 @@
 import Foundation
 
-/// State of the (future) native audio session. The real implementation will
-/// wrap AVAudioSession and react to interruptions, route changes and ducking.
+/// State of the native audio session: `LiveAudioSessionService` wraps
+/// AVAudioSession and reacts to interruptions, route changes and ducking.
 enum AudioSessionState: Equatable {
     case idle
     case active
@@ -23,8 +23,46 @@ struct NowPlayingInfo: Equatable {
     var queueCount: Int
 }
 
-/// Interface the real playback engine will implement. This slice ships only
-/// `StubAudioSessionService`; no audio is played and no CarPlay is involved.
+/// A transport command from the lock screen, Control Center or a remote.
+/// Next/previous track map to next/previous verse (the product brief's lock
+/// screen behavior); the skip commands map to next/previous repeat.
+enum AudioRemoteCommand: Equatable {
+    case play
+    case pause
+    case togglePlayPause
+    case nextVerse
+    case previousVerse
+    case nextRepeat
+    case previousRepeat
+}
+
+/// The audio-route changes playback reacts to.
+enum AudioRouteChange: Equatable {
+    case oldDeviceUnavailable
+    case newDeviceAvailable
+}
+
+/// Additive companion to `AudioSessionService`: a service that can push
+/// transport, interruption and route events to the engine. It is a separate
+/// protocol so the original service shape stays unchanged and stubs can ignore
+/// it entirely.
+protocol AudioSessionEventSourcing: AnyObject {
+    var eventHandler: (any AudioSessionEventHandler)? { get set }
+}
+
+/// Receives events from an `AudioSessionEventSourcing` service. The drill
+/// engine implements this.
+protocol AudioSessionEventHandler: AnyObject {
+    func audioSession(_ service: any AudioSessionService, didReceive command: AudioRemoteCommand)
+    func audioSessionDidBeginInterruption(_ service: any AudioSessionService)
+    func audioSessionDidEndInterruption(_ service: any AudioSessionService, shouldResume: Bool)
+    func audioSession(_ service: any AudioSessionService, didChangeRoute route: AudioRouteChange)
+    func audioSessionDidResetMediaServices(_ service: any AudioSessionService)
+}
+
+/// Interface the playback engine publishes audio state through. The app uses
+/// `LiveAudioSessionService` (AVFoundation); `StubAudioSessionService` remains
+/// for previews and tests. No CarPlay is involved.
 protocol AudioSessionService: AnyObject {
     var state: AudioSessionState { get }
     var nowPlaying: NowPlayingInfo? { get }
@@ -38,8 +76,8 @@ protocol AudioSessionService: AnyObject {
     func handleInterruptionEnded(shouldResume: Bool)
 }
 
-/// No-op audio session. Keeps state so the UI can reflect it, but produces no
-/// sound. Replace with an AVFoundation-backed implementation later.
+/// No-op audio session for previews and tests. Keeps state so the UI can
+/// reflect it, but produces no sound and emits no events.
 final class StubAudioSessionService: AudioSessionService {
     private(set) var state: AudioSessionState = .idle
     private(set) var nowPlaying: NowPlayingInfo?
