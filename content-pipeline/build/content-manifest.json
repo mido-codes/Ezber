@@ -487,7 +487,7 @@
       "bytes": 49950720,
       "file": "ezber-content.sqlite",
       "logical_digest": "sha256:696bcb8f1a548cd6391ff4ff1e76156b6e90c273408b62f429e67c2449d0a8cc",
-      "sha256": "sha256:7ea19f2b12e461809621937b1ca3042429f39ad3b8cc424ad402c76fb50ff02c"
+      "sha256": "sha256:92940238272d3feae61f274de8bb6dc92f8fb08c0956b2f8e532c6ae58c1746b"
     },
     "reciters": 11,
     "segments": 924396,
@@ -519,9 +519,9 @@
   },
   "generated_by": {
     "name": "ezber-content-pipeline",
-    "pipeline_version": "0.3.0",
+    "pipeline_version": "0.4.0",
     "schema_version": 1,
-    "version": "0.3.0"
+    "version": "0.4.0"
   },
   "licenses": {
     "cc-by-3.0": {

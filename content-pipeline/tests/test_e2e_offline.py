@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import io
+import json
 import os
 import tempfile
 import unittest
@@ -15,6 +16,7 @@ from ezber_pipeline.lockfile import LockBook
 from ezber_pipeline.normalize import build_bundle
 from ezber_pipeline.package import write_artifacts
 from ezber_pipeline.validate import ensure_valid
+from ezber_pipeline.webexport import export_web
 from tests import helpers
 
 RECITER_SPECS = [
@@ -111,6 +113,47 @@ class OfflineBuildTests(unittest.TestCase):
                 other.read_bytes(),
                 f"artifact {name} differs between identical builds",
             )
+
+        # The web export is a second deterministic projection of the same build:
+        # two builds of the same corpus must produce byte-identical web bundles.
+        first_web = export_web(self.root / "out1")
+        second_web = export_web(self.root / "out2")
+        self.assertEqual(
+            first_web.counts,
+            {
+                "surahs": 114,
+                "ayahs": 6236,
+                "words": words,
+                "reciters": 2 + len(helpers.FIXTURE_TIMING_RECITATIONS),
+                "audio_files": 228,
+                "segments": audio_segments + timing_segments,
+                "translations": 0,
+                "transliterations": 1,
+            },
+        )
+        first_web_bytes = {
+            path.relative_to(first_web.web_dir).as_posix(): path.read_bytes()
+            for path in first_web.web_dir.rglob("*")
+            if path.is_file()
+        }
+        second_web_bytes = {
+            path.relative_to(second_web.web_dir).as_posix(): path.read_bytes()
+            for path in second_web.web_dir.rglob("*")
+            if path.is_file()
+        }
+        self.assertEqual(first_web_bytes, second_web_bytes)
+        index = json.loads(first_web_bytes["index.json"])
+        self.assertEqual(index["counts"], first_web.counts)
+        self.assertEqual(index["logical_digest"], first.logical_digest)
+        self.assertEqual(index["database"], first.manifest["bundle"]["database"])
+        segment_reciters = {entry["reciter_id"] for entry in index["files"] if entry["kind"] == "segments"}
+        self.assertEqual(segment_reciters, {reciter.id for reciter in bundle.reciters})
+        licenses = json.loads(first_web_bytes["licenses.json"])
+        license_ids = {entry["id"] for entry in licenses["licenses"]}
+        self.assertIn("cc-by-4.0-quran-align", license_ids)
+        self.assertIn("tanzil-transliteration-permission", license_ids)
+        self.assertTrue(licenses["attributions"])
+        self.assertIn("TANZIL-NOTICE.txt", first_web_bytes)
 
     def test_repaired_timings_are_recorded(self) -> None:
         bundle = build_bundle(self.config, self.fetcher, LockBook(self.root / "lock2.json"))

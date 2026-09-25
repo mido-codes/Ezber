@@ -2,11 +2,11 @@
   "config_version": 2,
   "pipeline": {
     "name": "ezber-content-pipeline",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "schema_version": 1,
     "expected_surah_count": 114,
     "expected_ayah_count": 6236,
-    "user_agent": "ezber-content-pipeline/0.3.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
+    "user_agent": "ezber-content-pipeline/0.4.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
     "http": {
       "timeout_seconds": 60,
       "retries": 3,

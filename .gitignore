@@ -16,6 +16,7 @@ content-pipeline/build/*.sqlite-journal
 content-pipeline/build/*.sqlite-wal
 content-pipeline/build/*.sqlite-shm
 content-pipeline/build/build-report.json
+content-pipeline/build/web/
 
 # OS/editor noise
 .DS_Store
