@@ -201,14 +201,14 @@ enum EzberFont {
 
 extension Text {
     /// Kit micro style: 12 pt medium, 0.08 em tracking, uppercase.
-    func ezberMicro() -> Text {
+    func ezberMicro() -> some View {
         font(EzberFont.micro)
             .tracking(EzberFont.microTracking)
             .textCase(.uppercase)
     }
 
     /// Kit eyebrow style: 12 pt medium, 0.14 em tracking, uppercase.
-    func ezberEyebrow() -> Text {
+    func ezberEyebrow() -> some View {
         font(EzberFont.eyebrow)
             .tracking(EzberFont.eyebrowTracking)
             .textCase(.uppercase)
