@@ -1,0 +1,68 @@
+{
+  "config_version": 2,
+  "pipeline": {
+    "name": "ezber-content-pipeline",
+    "version": "0.3.0",
+    "schema_version": 1,
+    "expected_surah_count": 114,
+    "expected_ayah_count": 6236,
+    "user_agent": "ezber-content-pipeline/0.3.0 (+https://github.com/mido-codes/Ezber; Quran content foundation build)",
+    "http": {
+      "timeout_seconds": 60,
+      "retries": 3,
+      "retry_backoff_seconds": 2.0
+    },
+    "outputs": {
+      "database": "ezber-content.sqlite",
+      "content_manifest": "content-manifest.json",
+      "audio_manifest": "audio-manifest.json",
+      "license_credits": "EZBER-LICENSES.json",
+      "tanzil_notice": "TANZIL-NOTICE.txt",
+      "build_report": "build-report.json"
+    }
+  },
+  "content_policy": {
+    "mode": "offline-redistributable",
+    "description": "The app is fully offline and ships only content that may be redistributed inside it: Tanzil text and metadata, the Tanzil English transliteration (written permission), and cpfair/quran-align CC BY 4.0 word timings. There is no Quran Foundation content, no runtime Content API access, no OAuth2/token-broker path and no English translation in this bundle. Recitation audio stays disabled until Quran Foundation confirms sources in writing.",
+    "translations_enabled": false,
+    "quran_foundation_enabled": false
+  },
+  "sources": {
+    "tanzil_text": {
+      "kind": "tanzil_text",
+      "url": "https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=xml&agree=true",
+      "description": "Tanzil Quran Text (Uthmani, Version 1.1), XML download including the verbatim copyright notice",
+      "license_id": "cc-by-3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "license_evidence_url": "https://tanzil.net/docs/Text_License",
+      "attribution": "Quran text (Uthmani, version 1.1): Tanzil Project (https://tanzil.net), licensed CC BY 3.0. Served verbatim and unmodified.",
+      "notice_file": "licenses/notices/tanzil-quran-text-1.1-notice.txt"
+    },
+    "tanzil_metadata": {
+      "kind": "tanzil_metadata",
+      "url": "https://tanzil.net/res/text/metadata/quran-data.xml",
+      "description": "Tanzil Quran metadata 1.0: surah names/order, juz, hizb quarters, page starts, sajdah ayahs",
+      "license_id": "cc-by-3.0",
+      "license_url": "https://creativecommons.org/licenses/by/3.0/",
+      "license_evidence_url": "https://tanzil.net/docs/Quran_Metadata",
+      "attribution": "Quran metadata (surah names, juz/hizb/page/sajdah): Tanzil Project (https://tanzil.net), licensed CC BY 3.0."
+    }
+  },
+  "policy": {
+    "deny_hosts": [
+      "quranicaudio.com"
+    ],
+    "deny_url_substrings": [
+      "quranicaudio"
+    ],
+    "deny_reason": "QuranicAudio.com permits personal use only and forbids commercial use; Ezber must not ship QuranicAudio-backed recordings.",
+    "reciter_required_fields": [
+      "remote_id",
+      "name",
+      "source",
+      "license_id",
+      "license_url",
+      "license_evidence_url"
+    ]
+  }
+}

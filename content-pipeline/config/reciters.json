@@ -1,0 +1,145 @@
+{
+  "config_version": 2,
+  "catalog_policy": {
+    "admission_rule": "Captain decision (2026-09-25): a recording may enter the built catalog only when Quran Foundation has confirmed the source in writing. The candidates below are documented but disabled until that written confirmation exists. QuranicAudio-backed recordings are never eligible, and the pipeline still machine-checks each candidate's declared license whenever it is enabled.",
+    "evidence_check": "when an entry is enabled, the pipeline verifies the Internet Archive item still declares expected_license_url_prefix; a missing or changed license fails the build.",
+    "coverage_check": "every enabled style must provide all 114 chapter files and ayah timing for all 6236 ayahs. Disabled entries are not fetched and contribute nothing to the bundle.",
+    "timing_note": "Some Dhikr Al-Huda items include an extra ayah-0 row for the surah preamble (isti'adha/bismillah). The pipeline drops that row as a non-ayah and validates the remaining 1..N sequence; it refuses the style when the real ayahs are incomplete."
+  },
+  "catalog_notes": [
+    "Written confirmation from Quran Foundation is the gate for enabling any reciter here; a CC BY 4.0 declaration by an Internet Archive uploader alone does not satisfy it.",
+    "Mahmoud Khalil Al-Husary murattal is additionally not usable: its published timing.json has a broken chapter 1 (ayahs 1..6 only, the last two ayahs merged). Al-Husary mujawwad timing is complete.",
+    "Audio is never bundled in this repository; the manifest records chapter URLs and hashes, and the app downloads per surah by default (per-preset scope optional)."
+  ],
+  "fallback_sources": [
+    {
+      "id": "islamic_network",
+      "name": "Islamic Network / alquran.cloud audio CDN",
+      "enabled": false,
+      "status": "documented-fallback-off",
+      "note": "Kept as a documented fallback only. It is not a catalog entry and the pipeline has no adapter for it yet; enabling it requires a written license confirmation and a per-ayah or per-word timing source that matches the recordings."
+    }
+  ],
+  "reciters": [
+    {
+      "remote_id": "dhikr-alhuda-mishari-alafasy-hafs",
+      "name": "Mishary Rashid Al-Afasy",
+      "qirat": "Hafs 'an Asim",
+      "source": "internet_archive",
+      "enabled": false,
+      "status": "pending_written_confirmation",
+      "license_id": "cc-by-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-mishari-alafasy-hafs",
+      "license_metadata_url": "https://archive.org/metadata/dhikr-alhuda-mishari-alafasy-hafs",
+      "expected_license_url_prefix": "https://creativecommons.org/licenses/by/4.0/",
+      "default_style": "murattal",
+      "default_bitrate": 128,
+      "styles": [
+        {
+          "id": "murattal",
+          "name": "Murattal",
+          "timing_path": "murattal/timing.json",
+          "file_extension": "m4a",
+          "bitrates": [32, 64, 128]
+        }
+      ]
+    },
+    {
+      "remote_id": "dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "name": "Abdulrahman Alsudais",
+      "qirat": "Hafs 'an Asim",
+      "source": "internet_archive",
+      "enabled": false,
+      "status": "pending_written_confirmation",
+      "license_id": "cc-by-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "license_metadata_url": "https://archive.org/metadata/dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "expected_license_url_prefix": "https://creativecommons.org/licenses/by/4.0/",
+      "default_style": "murattal",
+      "default_bitrate": 128,
+      "styles": [
+        {
+          "id": "murattal",
+          "name": "Murattal",
+          "timing_path": "murattal/timing.json",
+          "file_extension": "m4a",
+          "bitrates": [32, 64, 128]
+        }
+      ]
+    },
+    {
+      "remote_id": "dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "name": "Mahmoud Khalil Al-Husary",
+      "qirat": "Hafs 'an Asim",
+      "source": "internet_archive",
+      "enabled": false,
+      "status": "pending_written_confirmation",
+      "license_id": "cc-by-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "license_metadata_url": "https://archive.org/metadata/dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "expected_license_url_prefix": "https://creativecommons.org/licenses/by/4.0/",
+      "default_style": "mujawwad",
+      "default_bitrate": 128,
+      "styles": [
+        {
+          "id": "mujawwad",
+          "name": "Mujawwad",
+          "timing_path": "mujawwad/timing.json",
+          "file_extension": "m4a",
+          "bitrates": [32, 64, 128]
+        }
+      ]
+    },
+    {
+      "remote_id": "dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "name": "Abu Bakr al-Shatri",
+      "qirat": "Hafs 'an Asim",
+      "source": "internet_archive",
+      "enabled": false,
+      "status": "pending_written_confirmation",
+      "license_id": "cc-by-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "license_metadata_url": "https://archive.org/metadata/dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "expected_license_url_prefix": "https://creativecommons.org/licenses/by/4.0/",
+      "default_style": "murattal",
+      "default_bitrate": 128,
+      "styles": [
+        {
+          "id": "murattal",
+          "name": "Murattal",
+          "timing_path": "murattal/timing.json",
+          "file_extension": "m4a",
+          "bitrates": [32, 64, 128]
+        }
+      ]
+    },
+    {
+      "remote_id": "dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "name": "Mohamed Siddiq al-Minshawi",
+      "qirat": "Hafs 'an Asim",
+      "source": "internet_archive",
+      "enabled": false,
+      "status": "pending_written_confirmation",
+      "license_id": "cc-by-4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "license_metadata_url": "https://archive.org/metadata/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "expected_license_url_prefix": "https://creativecommons.org/licenses/by/4.0/",
+      "default_style": "murattal",
+      "default_bitrate": 128,
+      "styles": [
+        {
+          "id": "murattal",
+          "name": "Murattal",
+          "timing_path": "murattal/timing.json",
+          "file_extension": "m4a",
+          "bitrates": [32, 64, 128]
+        }
+      ]
+    }
+  ]
+}

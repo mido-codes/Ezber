@@ -1,0 +1,91 @@
+{
+  "lock_version": 1,
+  "sources": {
+    "quran_align:Abdul_Basit_Mujawwad_128kbps.json": {
+      "asset": "Abdul_Basit_Mujawwad_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2351242,
+      "sha256": "sha256:44035a30a535a6b4af548603b9bc134383e18a4580952d24535a2b0340f56558"
+    },
+    "quran_align:Abdul_Basit_Murattal_64kbps.json": {
+      "asset": "Abdul_Basit_Murattal_64kbps.json",
+      "ayahs": 6236,
+      "bytes": 2335847,
+      "sha256": "sha256:5e884ac55832ec33c9339ef38267081297513edf6225e6f86d64e04b9e2a25fe"
+    },
+    "quran_align:Abu_Bakr_Ash-Shaatree_128kbps.json": {
+      "asset": "Abu_Bakr_Ash-Shaatree_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2314191,
+      "sha256": "sha256:633791c166d0dcf00e8654e2d21f926661fbbe25b89825dbd571b9463f1eaff5"
+    },
+    "quran_align:Alafasy_128kbps.json": {
+      "asset": "Alafasy_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2317265,
+      "sha256": "sha256:55c1353848d8f3140abab72bb5d1d4533476a8219f6241079a425d232f001eb7"
+    },
+    "quran_align:Hani_Rifai_192kbps.json": {
+      "asset": "Hani_Rifai_192kbps.json",
+      "ayahs": 6236,
+      "bytes": 2316263,
+      "sha256": "sha256:3215d0a9038d7eae695018b1bc5af05cea1cb12bdc0420fa6c5c8a320ec3b557"
+    },
+    "quran_align:Husary_64kbps.json": {
+      "asset": "Husary_64kbps.json",
+      "ayahs": 6236,
+      "bytes": 2348746,
+      "sha256": "sha256:4ccb674446203398531a5cc034ac2ca35e3c4632a2b881c16562fa7b185e7d2a"
+    },
+    "quran_align:Husary_Muallim_128kbps.json": {
+      "asset": "Husary_Muallim_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2340598,
+      "sha256": "sha256:3719fb5c482d7db7086b4a81cdb6f114aa71979899917a74e6c8ae5bec684f5f"
+    },
+    "quran_align:Minshawy_Mujawwad_192kbps.json": {
+      "asset": "Minshawy_Mujawwad_192kbps.json",
+      "ayahs": 6236,
+      "bytes": 2346060,
+      "sha256": "sha256:449766fca871ed3babb26665790eb2a0322d6eb51273b20dff4e1bcc44c46a76"
+    },
+    "quran_align:Minshawy_Murattal_128kbps.json": {
+      "asset": "Minshawy_Murattal_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2329090,
+      "sha256": "sha256:5fb1f51734790ce3a477c2c413897028ebf5d60a0e369c527a2c779ee0dd206d"
+    },
+    "quran_align:Mohammad_al_Tablaway_128kbps.json": {
+      "asset": "Mohammad_al_Tablaway_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2320064,
+      "sha256": "sha256:98563051769196e75d77d8e31f0d3338cd8e1fdd8993fb20da6febb249694a7f"
+    },
+    "quran_align:Saood_ash-Shuraym_128kbps.json": {
+      "asset": "Saood_ash-Shuraym_128kbps.json",
+      "ayahs": 6236,
+      "bytes": 2287177,
+      "sha256": "sha256:282fcb950c5c9327f2db8c306e4e054cadf487a45b475ed0034fce65664c1b02"
+    },
+    "quran_align:archive": {
+      "bytes": 5807871,
+      "sha256": "sha256:5eeb045d8a7895208c94d2d7ec243567f8f550728835411527c4ffa1e789c9b7",
+      "url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip"
+    },
+    "tanzil_metadata": {
+      "bytes": 77234,
+      "sha256": "sha256:8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a",
+      "url": "https://tanzil.net/res/text/metadata/quran-data.xml"
+    },
+    "tanzil_text": {
+      "bytes": 1516178,
+      "sha256": "sha256:203f0f1bf3158b1e5be4ab9f8f6870e570aab6d9a626fe6192a70b75d4afe0fd",
+      "url": "https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=xml&agree=true"
+    },
+    "tanzil_transliteration": {
+      "bytes": 1044894,
+      "sha256": "sha256:8c20d95e484534e921cd2e0d2546aab7f5300090c0bd76697095b3ca1db1e01d",
+      "url": "https://tanzil.net/trans/en.transliteration"
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "config_version": 1,
+  "enabled": true,
+  "source": "quran_align",
+  "release_tag": "release-2016-11-24",
+  "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+  "archive_url": "https://github.com/cpfair/quran-align/releases/download/release-2016-11-24/quran-align-data-2016-11-24.zip",
+  "license_id": "cc-by-4.0-quran-align",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+  "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+  "alignment_policy": "quran-align word indices refer to the Tanzil Uthmani text split on spaces (N words). Ezber words are the Tanzil transliteration tokens (M tokens). Per ayah the pipeline repairs the released segments into a non-decreasing piecewise-linear time function f over word positions, aligns tokens to words monotonically by rounding the proportional boundary j*M/N to the nearest token index (so a token never crosses a word boundary; M == N is the identity), then splits each word's span across its tokens by token length (or gives a token spanning several words the union of their spans). Malformed segments are repaired deterministically (reverse start/end swapped, zero-length and out-of-range segments dropped, word-range overlaps clamped, time inversions flattened, uncovered words interpolated between neighbouring aligned words, whole ayahs without segments synthesised from the recitation average word duration) and every repair is counted in the manifest.",
+  "recitations": [
+    {"asset": "Alafasy_128kbps.json", "remote_id": "quran-align:Alafasy_128kbps", "name": "Mishary Rashid Al-Afasy", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Abdul_Basit_Murattal_64kbps.json", "remote_id": "quran-align:Abdul_Basit_Murattal_64kbps", "name": "Abdul Basit Abdul Samad", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Abdul_Basit_Mujawwad_128kbps.json", "remote_id": "quran-align:Abdul_Basit_Mujawwad_128kbps", "name": "Abdul Basit Abdul Samad", "style_id": "mujawwad", "style": "Mujawwad", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Abu_Bakr_Ash-Shaatree_128kbps.json", "remote_id": "quran-align:Abu_Bakr_Ash-Shaatree_128kbps", "name": "Abu Bakr al-Shatri", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Hani_Rifai_192kbps.json", "remote_id": "quran-align:Hani_Rifai_192kbps", "name": "Hani ar-Rifai", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Husary_64kbps.json", "remote_id": "quran-align:Husary_64kbps", "name": "Mahmoud Khalil Al-Husary", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Husary_Muallim_128kbps.json", "remote_id": "quran-align:Husary_Muallim_128kbps", "name": "Mahmoud Khalil Al-Husary", "style_id": "muallim", "style": "Muallim", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Minshawy_Murattal_128kbps.json", "remote_id": "quran-align:Minshawy_Murattal_128kbps", "name": "Mohamed Siddiq al-Minshawi", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Minshawy_Mujawwad_192kbps.json", "remote_id": "quran-align:Minshawy_Mujawwad_192kbps", "name": "Mohamed Siddiq al-Minshawi", "style_id": "mujawwad", "style": "Mujawwad", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Mohammad_al_Tablaway_128kbps.json", "remote_id": "quran-align:Mohammad_al_Tablaway_128kbps", "name": "Mohamed al-Tablawi", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {"asset": "Saood_ash-Shuraym_128kbps.json", "remote_id": "quran-align:Saood_ash-Shuraym_128kbps", "name": "Saud Al-Shuraim", "style_id": "murattal", "style": "Murattal", "qirat": "Hafs 'an Asim", "status": "enabled"},
+    {
+      "asset": "Abdurrahmaan_As-Sudais_192kbps.json",
+      "remote_id": "quran-align:Abdurrahmaan_As-Sudais_192kbps",
+      "name": "Abdulrahman Al-Sudais",
+      "style_id": "murattal",
+      "style": "Murattal",
+      "qirat": "Hafs 'an Asim",
+      "status": "excluded",
+      "excluded_reason": "The 2016-11-24 release ships this file as a three-line align-tool crash log instead of JSON (sha256 53469c4267c51661804dd4eba81c3dada40022a2d9ebd0d55b1dc3a4c9fcd9f4). It cannot be parsed and is excluded until an upstream replacement exists."
+    }
+  ],
+  "excluded_note": "The captain asked for the 12 recitations the quran-align package supports. One of the 12 files is unusable (crash log), so 11 are wired and the 12th is recorded here as excluded with its exact hash; no data is fabricated for it."
+}

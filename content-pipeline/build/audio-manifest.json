@@ -1,0 +1,236 @@
+{
+  "audio_manifest_version": 1,
+  "distribution_policy": {
+    "admission_rule": "Captain decision (2026-09-25): a recording may enter the built catalog only when Quran Foundation has confirmed the source in writing. The candidates below are documented but disabled until that written confirmation exists. QuranicAudio-backed recordings are never eligible, and the pipeline still machine-checks each candidate's declared license whenever it is enabled.",
+    "deny_hosts": [
+      "quranicaudio.com"
+    ],
+    "deny_reason": "QuranicAudio.com permits personal use only and forbids commercial use; Ezber must not ship QuranicAudio-backed recordings."
+  },
+  "fallback_sources": [
+    {
+      "enabled": false,
+      "id": "islamic_network",
+      "name": "Islamic Network / alquran.cloud audio CDN",
+      "note": "Kept as a documented fallback only. It is not a catalog entry and the pipeline has no adapter for it yet; enabling it requires a written license confirmation and a per-ayah or per-word timing source that matches the recordings.",
+      "status": "documented-fallback-off"
+    }
+  ],
+  "generated_by": {
+    "name": "ezber-content-pipeline",
+    "pipeline_version": "0.3.0",
+    "version": "0.3.0"
+  },
+  "pending_reciter_candidates": [
+    {
+      "each": "enable in content-pipeline/config/reciters.json only after Quran Foundation confirms the source in writing (CD-2)",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "license_id": "cc-by-4.0",
+      "name": "Abdulrahman Alsudais",
+      "remote_id": "dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "status": "pending_written_confirmation"
+    },
+    {
+      "each": "enable in content-pipeline/config/reciters.json only after Quran Foundation confirms the source in writing (CD-2)",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "license_id": "cc-by-4.0",
+      "name": "Abu Bakr al-Shatri",
+      "remote_id": "dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "status": "pending_written_confirmation"
+    },
+    {
+      "each": "enable in content-pipeline/config/reciters.json only after Quran Foundation confirms the source in writing (CD-2)",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "license_id": "cc-by-4.0",
+      "name": "Mahmoud Khalil Al-Husary",
+      "remote_id": "dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "status": "pending_written_confirmation"
+    },
+    {
+      "each": "enable in content-pipeline/config/reciters.json only after Quran Foundation confirms the source in writing (CD-2)",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-mishari-alafasy-hafs",
+      "license_id": "cc-by-4.0",
+      "name": "Mishary Rashid Al-Afasy",
+      "remote_id": "dhikr-alhuda-mishari-alafasy-hafs",
+      "status": "pending_written_confirmation"
+    },
+    {
+      "each": "enable in content-pipeline/config/reciters.json only after Quran Foundation confirms the source in writing (CD-2)",
+      "license_evidence_url": "https://archive.org/details/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "license_id": "cc-by-4.0",
+      "name": "Mohamed Siddiq al-Minshawi",
+      "remote_id": "dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "status": "pending_written_confirmation"
+    }
+  ],
+  "reciters": [],
+  "timing_recitations": [
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mishary Rashid Al-Afasy",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Alafasy_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Abdul Basit Abdul Samad",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Abdul_Basit_Murattal_64kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Abdul Basit Abdul Samad",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Abdul_Basit_Mujawwad_128kbps",
+      "status": "timing_only",
+      "style": "Mujawwad",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Abu Bakr al-Shatri",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Abu_Bakr_Ash-Shaatree_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Hani ar-Rifai",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Hani_Rifai_192kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mahmoud Khalil Al-Husary",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Husary_64kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mahmoud Khalil Al-Husary",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Husary_Muallim_128kbps",
+      "status": "timing_only",
+      "style": "Muallim",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mohamed Siddiq al-Minshawi",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Minshawy_Murattal_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mohamed Siddiq al-Minshawi",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Minshawy_Mujawwad_192kbps",
+      "status": "timing_only",
+      "style": "Mujawwad",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Mohamed al-Tablawi",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Mohammad_al_Tablaway_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    },
+    {
+      "attribution": "Word timing data: cpfair/quran-align (https://github.com/cpfair/quran-align), licensed CC BY 4.0.",
+      "has_audio": false,
+      "license_evidence_url": "https://github.com/cpfair/quran-align#data",
+      "license_id": "cc-by-4.0-quran-align",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "name": "Saud Al-Shuraim",
+      "qirat": "Hafs 'an Asim",
+      "remote_id": "quran-align:Saood_ash-Shuraym_128kbps",
+      "status": "timing_only",
+      "style": "Murattal",
+      "whole_ayah_segments": 6236,
+      "word_segments": 77800
+    }
+  ],
+  "word_timing": {
+    "alignment_policy": "quran-align word indices refer to the Tanzil Uthmani text split on spaces (N words). Ezber words are the Tanzil transliteration tokens (M tokens). Per ayah the pipeline repairs the released segments into a non-decreasing piecewise-linear time function f over word positions, aligns tokens to words monotonically by rounding the proportional boundary j*M/N to the nearest token index (so a token never crosses a word boundary; M == N is the identity), then splits each word's span across its tokens by token length (or gives a token spanning several words the union of their spans). Malformed segments are repaired deterministically (reverse start/end swapped, zero-length and out-of-range segments dropped, word-range overlaps clamped, time inversions flattened, uncovered words interpolated between neighbouring aligned words, whole ayahs without segments synthesised from the recitation average word duration) and every repair is counted in the manifest.",
+    "excluded": [
+      {
+        "asset": "Abdurrahmaan_As-Sudais_192kbps.json",
+        "reason": "The 2016-11-24 release ships this file as a three-line align-tool crash log instead of JSON (sha256 53469c4267c51661804dd4eba81c3dada40022a2d9ebd0d55b1dc3a4c9fcd9f4). It cannot be parsed and is excluded until an upstream replacement exists.",
+        "remote_id": "quran-align:Abdurrahmaan_As-Sudais_192kbps"
+      }
+    ],
+    "release_page": "https://github.com/cpfair/quran-align/releases/tag/release-2016-11-24",
+    "release_tag": "release-2016-11-24",
+    "source": "quran_align"
+  }
+}
