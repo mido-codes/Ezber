@@ -37,6 +37,7 @@ import app.ezber.android.AppEnvironment
 import app.ezber.android.R
 import app.ezber.android.features.reciterpicker.ReciterPickerDialog
 import app.ezber.android.models.DownloadScope
+import app.ezber.android.models.DrillQueue
 import app.ezber.android.models.PlaybackMode
 import app.ezber.android.models.Preset
 import app.ezber.android.models.TranslationMode
@@ -192,6 +193,44 @@ fun PresetBuilderScreen(
                         textAlign = TextAlign.End,
                         modifier = Modifier.width(44.dp),
                     )
+                }
+            }
+
+            item {
+                val planItems = remember(draft.surahId, draft.range, draft.repeats, surah) {
+                    val currentSurah = surah ?: return@remember emptyList()
+                    DrillQueue.build(
+                        preset = draft.makePreset(existingPreset, currentSurah),
+                        surah = currentSurah,
+                        verses = app.content.verses(currentSurah.id, draft.range),
+                    ).items
+                }
+                EzberCard {
+                    Text("Drill plan", style = MaterialTheme.typography.titleMedium)
+                    InfoRow(title = "Verses", value = "${draft.range.count}")
+                    InfoRow(title = "Items (verse × repeat)", value = "${planItems.size}")
+                    planItems.take(6).forEach { drillItem ->
+                        Text(
+                            text = "${drillItem.verse.reference} · repeat " +
+                                "${drillItem.repeatIndex} of ${drillItem.repeatCount}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (planItems.size > 6) {
+                        Text(
+                            text = "… and ${planItems.size - 6} more",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    if (draft.reciterId == 0) {
+                        Text(
+                            text = "No reciter yet: playback resolves audio from the content bundle.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
                 }
             }
 

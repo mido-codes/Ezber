@@ -2,12 +2,19 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!--
-      Offline-first: no network, storage or audio permissions are needed for
-      this slice because the content is bundled/placeholder and audio is
-      stubbed. The real Media3 background playback service will add
-      FOREGROUND_SERVICE + FOREGROUND_SERVICE_MEDIA_PLAYBACK (and POST_NOTIFICATIONS
-      for Android 13+) when it replaces StubAudioSessionService.
+      Offline-first: the content bundle ships in the APK and user data stays
+      local. Network is used only to download a recitation from the content
+      bundle's audio manifest into the local audio cache, and the foreground
+      media-playback service keeps a running drill audible on the lock screen
+      and in Android Auto.
     -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
         android:name=".EzberApplication"
         android:allowBackup="true"
@@ -26,6 +33,27 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          Media3 owns the ExoPlayer, the MediaStyle notification, audio focus
+          and the browsable library. Android Auto binds the same service
+          through the MediaBrowserService action.
+        -->
+        <service
+            android:name=".audio.EzberMediaService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+                <action android:name="android.media.browse.MediaBrowserService" />
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+            </intent-filter>
+        </service>
+
+        <!-- Declares the media capability Android Auto discovers. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
     </application>
 
 </manifest>

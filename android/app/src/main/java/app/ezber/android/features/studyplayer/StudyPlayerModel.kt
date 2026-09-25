@@ -18,6 +18,7 @@ import app.ezber.android.models.TranslationMode
 import app.ezber.android.models.Verse
 import app.ezber.android.services.DrillSessionConfiguration
 import app.ezber.android.services.DrillSessionListener
+import app.ezber.android.services.DrillSessionMetadata
 import app.ezber.android.services.DrillSessionState
 import app.ezber.android.services.DrillSessionStatus
 
@@ -48,12 +49,19 @@ class StudyPlayerModel(
                 ResumePoint(it.verse.number, it.repeatIndex)
             }
         }
+        val reciter = preset.reciterId?.let { app.content.reciter(it) }
         app.drillSession.load(
             queue = queue,
             startingAt = resume,
             configuration = DrillSessionConfiguration(
                 loopUntilStopped = preset.display.loopUntilStopped,
                 pauseBetweenRepeatsMs = preset.display.pauseBetweenRepeatsMs,
+            ),
+            metadata = DrillSessionMetadata(
+                presetName = preset.name,
+                surahName = surah.nameLatin,
+                reciterId = preset.reciterId,
+                reciterName = reciter?.name,
             ),
         )
         state = app.drillSession.state
@@ -82,6 +90,12 @@ class StudyPlayerModel(
 
     val isPlaying: Boolean get() = state.status == DrillSessionStatus.PLAYING
 
+    val isLoading: Boolean get() = state.status == DrillSessionStatus.LOADING
+
+    val errorMessage: String? get() = state.errorMessage
+
+    val hasReciter: Boolean get() = preset.reciterId != null
+
     val isCompleted: Boolean get() = state.status == DrillSessionStatus.COMPLETED
 
     val shouldShowTranslation: Boolean
@@ -95,13 +109,14 @@ class StudyPlayerModel(
 
     fun togglePlayPause() {
         when (state.status) {
-            DrillSessionStatus.PLAYING -> app.drillSession.pause()
+            DrillSessionStatus.PLAYING, DrillSessionStatus.LOADING -> app.drillSession.pause()
             DrillSessionStatus.COMPLETED -> {
                 app.drillSession.restart()
                 app.drillSession.play()
             }
 
-            DrillSessionStatus.IDLE, DrillSessionStatus.PAUSED -> app.drillSession.play()
+            DrillSessionStatus.IDLE, DrillSessionStatus.PAUSED, DrillSessionStatus.ERROR ->
+                app.drillSession.play()
         }
     }
 

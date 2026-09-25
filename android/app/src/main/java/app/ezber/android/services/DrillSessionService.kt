@@ -12,7 +12,19 @@ data class DrillSessionConfiguration(
     val pauseBetweenRepeatsMs: Int = 500,
 )
 
-enum class DrillSessionStatus { IDLE, PLAYING, PAUSED, COMPLETED }
+enum class DrillSessionStatus { IDLE, LOADING, PLAYING, PAUSED, COMPLETED, ERROR }
+
+/**
+ * What the lock screen and Android Auto should show while a drill runs: the
+ * preset whose plan is loaded, the surah verse labels and the reciter whose
+ * audio is resolved from the content manifest.
+ */
+data class DrillSessionMetadata(
+    val presetName: String,
+    val surahName: String,
+    val reciterId: Int?,
+    val reciterName: String? = null,
+)
 
 /**
  * Everything the study player needs to render: the queue, the current item,
@@ -25,6 +37,9 @@ data class DrillSessionState(
     val completedItemCount: Int = 0,
     val totalItemCount: Int = 0,
     val configuration: DrillSessionConfiguration = DrillSessionConfiguration(),
+    val errorMessage: String? = null,
+    val audioReadyCount: Int = 0,
+    val audioTotalCount: Int = 0,
 ) {
     val currentItem: DrillItem? get() = queue?.items?.getOrNull(currentIndex)
     val currentRepeat: Int get() = currentItem?.repeatIndex ?: 0
@@ -59,7 +74,12 @@ interface DrillSessionService {
     val state: DrillSessionState
     val queue: DrillQueue?
 
-    fun load(queue: DrillQueue, startingAt: ResumePoint?, configuration: DrillSessionConfiguration)
+    fun load(
+        queue: DrillQueue,
+        startingAt: ResumePoint?,
+        configuration: DrillSessionConfiguration,
+        metadata: DrillSessionMetadata? = null,
+    )
     fun play()
     fun pause()
     fun togglePlayPause()
@@ -116,6 +136,7 @@ class StubDrillSessionService(
         queue: DrillQueue,
         startingAt: ResumePoint?,
         configuration: DrillSessionConfiguration,
+        metadata: DrillSessionMetadata?,
     ) {
         var newState = DrillSessionState()
         newState = newState.copy(
