@@ -18,7 +18,7 @@ A person memorizing Surah Ar-Rahman in sections. They drill verses 1–5, repeat
 ## Screens to design
 
 ### 1. Onboarding / first run
-Short and skippable. Introduce the drill, offer transliteration as the default reading surface, and set a starter language (Turkish-first, English available). No account required, and no permission requests beyond audio.
+Short and skippable. Introduce the drill, offer transliteration as the default reading surface, and set a starter language (English-first, Turkish available). No account required, and no permission requests beyond audio.
 
 ### 2. Home / Continue
 The most important screen. Shows the last-used preset with a large Continue control, the current verse and where it sits in the section, a quick entry to start a new drill, and a compact progress glance. It should be usable one-handed and glanceable in the car.
@@ -69,7 +69,7 @@ The text, transliteration, translation and reciter attributions, with their lice
 
 ## Look and feel
 
-A restrained, quiet aesthetic suited to focused memorization: generous spacing, a humanist or serif typeface for the transliteration, a warm neutral palette, and a strong dark theme for night and car use. The app name is Turkish; the interface is Turkish-first with English available. Support Dynamic Type and high contrast.
+A restrained, quiet aesthetic suited to focused memorization: generous spacing, a humanist or serif typeface for the transliteration, a warm neutral palette, and a strong dark theme for night and car use. The app name is Turkish; the interface is English-first with Turkish available. Support Dynamic Type and high contrast.
 
 ## Platforms and constraints
 
