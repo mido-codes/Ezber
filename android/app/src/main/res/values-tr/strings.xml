@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Turkish-first: the default interface language. -->
+    <string name="app_name">Ezber</string>
+
+    <string name="tab_home">Ana Sayfa</string>
+    <string name="tab_library">Kütüphane</string>
+    <string name="tab_progress">İlerleme</string>
+    <string name="tab_notes">Notlar</string>
+    <string name="tab_settings">Ayarlar</string>
+    <string name="action_back">Geri</string>
+    <string name="action_cancel">İptal</string>
+    <string name="action_save">Kaydet</string>
+    <string name="action_continue">Devam</string>
+    <string name="action_delete">Sil</string>
+    <string name="action_edit">Düzenle</string>
+    <string name="action_add">Ekle</string>
+    <string name="action_search">Ara</string>
+
+    <string name="title_surah_picker">Sure seç</string>
+    <string name="title_section_picker">Bölüm seç</string>
+    <string name="title_preset_builder">Yeni hazır ayar</string>
+    <string name="title_preset_builder_edit">Hazır ayarı düzenle</string>
+    <string name="title_preset_library">Hazır ayarlar</string>
+    <string name="title_study_player">Çalışma</string>
+    <string name="title_reciters">Kâriler</string>
+    <string name="title_progress">İlerleme</string>
+    <string name="title_verse_detail">Ayet</string>
+    <string name="title_notes">Notlar</string>
+    <string name="title_settings">Ayarlar</string>
+    <string name="title_credits">Katkılar ve lisanslar</string>
+</resources>

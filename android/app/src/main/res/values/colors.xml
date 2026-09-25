@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mirrors the warm, quiet palette in ios/Ezber/Resources/Assets.xcassets. -->
+    <color name="warm_background">#FAF6EF</color>
+    <color name="card_background">#FFFFFF</color>
+    <color name="accent">#B07D3F</color>
+    <color name="ic_launcher_background">#B07D3F</color>
+</resources>
