@@ -1,0 +1,17 @@
+{
+  "config_version": 1,
+  "editions": [
+    {
+      "resource_id": "19",
+      "name": "M. Pickthall",
+      "author": "Mohammed Marmaduke William Pickthall",
+      "language": "en",
+      "source": "quran_foundation",
+      "license_id": "qf-served-public-domain",
+      "license_url": "https://creativecommons.org/publicdomain/mark/1.0/",
+      "license_evidence_url": "https://api-docs.quran.foundation/legal/developer-terms/",
+      "attribution": "Translation: Mohammed Marmaduke Pickthall, The Meaning of the Glorious Koran (1930, public domain). Served as Quran Foundation resource 19; Quran data provided by Quran Foundation.",
+      "choice_rationale": "Pickthall (published 1930, author died 1936) is public domain in the US and in life+70 jurisdictions, so the underlying work is redistributable; the copy bundled here is the Quran Foundation-served resource 19, which also keeps one provenance/attribution path with the mandated transliteration (resource 57). Captain decision CD-3 still covers the final edition choice."
+    }
+  ]
+}

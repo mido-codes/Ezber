@@ -1,0 +1,543 @@
+{
+  "assets": [
+    {
+      "asset_id": "quran-metadata:tanzil-1.0",
+      "description": "Tanzil Quran metadata (surah names, juz, hizb, page, sajdah)",
+      "details": {
+        "juz": 30,
+        "pages": 604
+      },
+      "kind": "quran_metadata",
+      "license": {
+        "attribution": "Quran metadata (surah names, juz/hizb/page/sajdah): Tanzil Project (https://tanzil.net), licensed CC BY 3.0.",
+        "evidence_url": "https://tanzil.net/docs/Quran_Metadata",
+        "id": "cc-by-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/"
+      },
+      "source": {
+        "bytes": 77234,
+        "digest": null,
+        "name": "tanzil",
+        "sha256": "sha256:8867c1d88191472adec9db694b3cd9f135b1a2ef580574d32cf888dcb22c5c7a",
+        "url": "https://tanzil.net/res/text/metadata/quran-data.xml",
+        "version": "1.0"
+      }
+    },
+    {
+      "asset_id": "quran-text:tanzil-uthmani-1.1",
+      "description": "Tanzil Quran Text (Uthmani, Version 1.1)",
+      "details": {
+        "ayahs": 6236,
+        "surahs": 114
+      },
+      "kind": "quran_text",
+      "license": {
+        "attribution": "Quran text (Uthmani, version 1.1): Tanzil Project (https://tanzil.net), licensed CC BY 3.0. Served verbatim and unmodified.",
+        "evidence_url": "https://tanzil.net/docs/Text_License",
+        "id": "cc-by-3.0",
+        "url": "https://creativecommons.org/licenses/by/3.0/"
+      },
+      "source": {
+        "bytes": 1516178,
+        "digest": null,
+        "name": "tanzil",
+        "sha256": "sha256:203f0f1bf3158b1e5be4ab9f8f6870e570aab6d9a626fe6192a70b75d4afe0fd",
+        "url": "https://tanzil.net/pub/download/index.php?quranType=uthmani&outType=xml&agree=true",
+        "version": "1.1"
+      }
+    },
+    {
+      "asset_id": "recitation-audio:dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "description": "Chapter recitations by Abdulrahman Alsudais (Abdulrahman Alsudais - Hafs | Dhikr Al-Huda)",
+      "details": {
+        "bitrates": {
+          "murattal": [
+            32,
+            64,
+            128
+          ]
+        },
+        "chapters": 114,
+        "files": 342,
+        "item_id": "dhikr-alhuda-abdulrahman-alsudais-hafs",
+        "styles": [
+          "murattal"
+        ],
+        "title": "Abdulrahman Alsudais - Hafs | Dhikr Al-Huda"
+      },
+      "kind": "recitation_audio",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Abdulrahman Alsudais (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-abdulrahman-alsudais-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-abdulrahman-alsudais-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:05ffa7331eaaa3197a69175576c078186b0345cb363e3b7954292eb60405d495",
+        "name": "internet_archive",
+        "sha256": null,
+        "url": "https://archive.org/download/dhikr-alhuda-abdulrahman-alsudais-hafs/",
+        "version": "sha256:3ecb9a06b2c77c5a291de12a19e8736acc49e5d8f6e2dcd48b990d087b098c4c"
+      }
+    },
+    {
+      "asset_id": "recitation-audio:dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "description": "Chapter recitations by Abu Bakr al-Shatri (Abu Bakr Alshatri - Hafs | Dhikr Al-Huda)",
+      "details": {
+        "bitrates": {
+          "murattal": [
+            32,
+            64,
+            128
+          ]
+        },
+        "chapters": 114,
+        "files": 342,
+        "item_id": "dhikr-alhuda-abu-bakr-alshatri-hafs",
+        "styles": [
+          "murattal"
+        ],
+        "title": "Abu Bakr Alshatri - Hafs | Dhikr Al-Huda"
+      },
+      "kind": "recitation_audio",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Abu Bakr al-Shatri (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-abu-bakr-alshatri-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-abu-bakr-alshatri-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:73f0e1433ca41cc07f7bf267d68d0abdd49e624b64caeefd522799c4be5555c3",
+        "name": "internet_archive",
+        "sha256": null,
+        "url": "https://archive.org/download/dhikr-alhuda-abu-bakr-alshatri-hafs/",
+        "version": "sha256:41b7e344ca4719888cea3fd8b34d5ee220fcf04389d49ab3a8ceebb753921fdb"
+      }
+    },
+    {
+      "asset_id": "recitation-audio:dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "description": "Chapter recitations by Mahmoud Khalil Al-Husary (Mahmoud Khalil Alhussary - Hafs | Dhikr Al-Huda)",
+      "details": {
+        "bitrates": {
+          "mujawwad": [
+            32,
+            64,
+            128
+          ]
+        },
+        "chapters": 114,
+        "files": 342,
+        "item_id": "dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+        "styles": [
+          "mujawwad"
+        ],
+        "title": "Mahmoud Khalil Alhussary - Hafs | Dhikr Al-Huda"
+      },
+      "kind": "recitation_audio",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Mahmoud Khalil Al-Husary (Hafs 'an Asim, Mujawwad), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-mahmoud-khalil-alhussary-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:06f21601549b34554e9eb2071d1e33c3ef80d547b13bd49c71f3b12708360cd6",
+        "name": "internet_archive",
+        "sha256": null,
+        "url": "https://archive.org/download/dhikr-alhuda-mahmoud-khalil-alhussary-hafs/",
+        "version": "sha256:9cd61cf5bb9bcc55389b851b2ddae1308b5aecd23fc37f5680975dd1a546e462"
+      }
+    },
+    {
+      "asset_id": "recitation-audio:dhikr-alhuda-mishari-alafasy-hafs",
+      "description": "Chapter recitations by Mishary Rashid Al-Afasy (Mishari Alafasy - Hafs | Dhikr Al-Huda)",
+      "details": {
+        "bitrates": {
+          "murattal": [
+            32,
+            64,
+            128
+          ]
+        },
+        "chapters": 114,
+        "files": 342,
+        "item_id": "dhikr-alhuda-mishari-alafasy-hafs",
+        "styles": [
+          "murattal"
+        ],
+        "title": "Mishari Alafasy - Hafs | Dhikr Al-Huda"
+      },
+      "kind": "recitation_audio",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Mishary Rashid Al-Afasy (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-mishari-alafasy-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-mishari-alafasy-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:953ec9b445752610d46e4ab26adaf0ff6d19757c574a393eae12e99a998885e7",
+        "name": "internet_archive",
+        "sha256": null,
+        "url": "https://archive.org/download/dhikr-alhuda-mishari-alafasy-hafs/",
+        "version": "sha256:5a32b41cf770e32f4e3322ba50df720a77489203431f770554f5ef91273ccef3"
+      }
+    },
+    {
+      "asset_id": "recitation-audio:dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "description": "Chapter recitations by Mohamed Siddiq al-Minshawi (Muhammad Siddiq Alminshawi - Hafs | Dhikr Al-Huda)",
+      "details": {
+        "bitrates": {
+          "murattal": [
+            32,
+            64,
+            128
+          ]
+        },
+        "chapters": 114,
+        "files": 342,
+        "item_id": "dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+        "styles": [
+          "murattal"
+        ],
+        "title": "Muhammad Siddiq Alminshawi - Hafs | Dhikr Al-Huda"
+      },
+      "kind": "recitation_audio",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Mohamed Siddiq al-Minshawi (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-muhammad-siddiq-alminshawi-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:18cbebe223ebd550dc56cda6891bcd200c63558a2705da687764ef2a08bb9547",
+        "name": "internet_archive",
+        "sha256": null,
+        "url": "https://archive.org/download/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs/",
+        "version": "sha256:f5c2edea386d50f7f37389fe35de01389ccbf94d5f1db77b89cc43e3326203a3"
+      }
+    },
+    {
+      "asset_id": "recitation-timing:dhikr-alhuda-abdulrahman-alsudais-hafs:murattal",
+      "description": "Chapter/ayah timing for Abdulrahman Alsudais (Murattal)",
+      "details": {
+        "item_id": "dhikr-alhuda-abdulrahman-alsudais-hafs",
+        "rows": 6236,
+        "style": "murattal"
+      },
+      "kind": "recitation_timing",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Abdulrahman Alsudais (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-abdulrahman-alsudais-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-abdulrahman-alsudais-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "internet_archive",
+        "sha256": "sha256:e9fc98ffea0961ca604bb57a1f299ca7711e7c0f094613feaad06b009c931748",
+        "url": "https://archive.org/download/dhikr-alhuda-abdulrahman-alsudais-hafs/murattal/timing.json",
+        "version": "sha256:3ecb9a06b2c77c5a291de12a19e8736acc49e5d8f6e2dcd48b990d087b098c4c"
+      }
+    },
+    {
+      "asset_id": "recitation-timing:dhikr-alhuda-abu-bakr-alshatri-hafs:murattal",
+      "description": "Chapter/ayah timing for Abu Bakr al-Shatri (Murattal)",
+      "details": {
+        "item_id": "dhikr-alhuda-abu-bakr-alshatri-hafs",
+        "rows": 6236,
+        "style": "murattal"
+      },
+      "kind": "recitation_timing",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Abu Bakr al-Shatri (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-abu-bakr-alshatri-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-abu-bakr-alshatri-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "internet_archive",
+        "sha256": "sha256:4cf929d507d1afb5d9e4487f4ffca23f4ad34dfc63025ec8d69447afb2313ba2",
+        "url": "https://archive.org/download/dhikr-alhuda-abu-bakr-alshatri-hafs/murattal/timing.json",
+        "version": "sha256:41b7e344ca4719888cea3fd8b34d5ee220fcf04389d49ab3a8ceebb753921fdb"
+      }
+    },
+    {
+      "asset_id": "recitation-timing:dhikr-alhuda-mahmoud-khalil-alhussary-hafs:mujawwad",
+      "description": "Chapter/ayah timing for Mahmoud Khalil Al-Husary (Mujawwad)",
+      "details": {
+        "item_id": "dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+        "rows": 6236,
+        "style": "mujawwad"
+      },
+      "kind": "recitation_timing",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Mahmoud Khalil Al-Husary (Hafs 'an Asim, Mujawwad), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-mahmoud-khalil-alhussary-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "internet_archive",
+        "sha256": "sha256:5dba4b2c001a72d365be106c1588f613ea20ee3f55e1473f4567f59adec62649",
+        "url": "https://archive.org/download/dhikr-alhuda-mahmoud-khalil-alhussary-hafs/mujawwad/timing.json",
+        "version": "sha256:9cd61cf5bb9bcc55389b851b2ddae1308b5aecd23fc37f5680975dd1a546e462"
+      }
+    },
+    {
+      "asset_id": "recitation-timing:dhikr-alhuda-mishari-alafasy-hafs:murattal",
+      "description": "Chapter/ayah timing for Mishary Rashid Al-Afasy (Murattal)",
+      "details": {
+        "item_id": "dhikr-alhuda-mishari-alafasy-hafs",
+        "rows": 6236,
+        "style": "murattal"
+      },
+      "kind": "recitation_timing",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Mishary Rashid Al-Afasy (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-mishari-alafasy-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-mishari-alafasy-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "internet_archive",
+        "sha256": "sha256:eaa762a434e4a8fb81aa97a1fed3b7b00f1b7af031f1d121e413178679dd969b",
+        "url": "https://archive.org/download/dhikr-alhuda-mishari-alafasy-hafs/murattal/timing.json",
+        "version": "sha256:5a32b41cf770e32f4e3322ba50df720a77489203431f770554f5ef91273ccef3"
+      }
+    },
+    {
+      "asset_id": "recitation-timing:dhikr-alhuda-muhammad-siddiq-alminshawi-hafs:murattal",
+      "description": "Chapter/ayah timing for Mohamed Siddiq al-Minshawi (Murattal)",
+      "details": {
+        "item_id": "dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+        "rows": 6236,
+        "style": "murattal"
+      },
+      "kind": "recitation_timing",
+      "license": {
+        "attribution": "Recitation audio and ayah timing: Mohamed Siddiq al-Minshawi (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-muhammad-siddiq-alminshawi-hafs), licensed CC BY 4.0.",
+        "evidence_url": "https://archive.org/details/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+        "id": "cc-by-4.0",
+        "url": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": null,
+        "name": "internet_archive",
+        "sha256": "sha256:b0eea08b8cd256cabfc3e2ec3e7bd7131d332ed47b60fa4d7cbaf9e0daf0fb92",
+        "url": "https://archive.org/download/dhikr-alhuda-muhammad-siddiq-alminshawi-hafs/murattal/timing.json",
+        "version": "sha256:f5c2edea386d50f7f37389fe35de01389ccbf94d5f1db77b89cc43e3326203a3"
+      }
+    },
+    {
+      "asset_id": "translation:19",
+      "description": "English translation: M. Pickthall (QF resource 19)",
+      "details": {
+        "language": "en",
+        "resource_id": "19",
+        "rows": 6236
+      },
+      "kind": "translation",
+      "license": {
+        "attribution": "Translation: Mohammed Marmaduke Pickthall, The Meaning of the Glorious Koran (1930, public domain). Served as Quran Foundation resource 19; Quran data provided by Quran Foundation.",
+        "evidence_url": "https://api-docs.quran.foundation/legal/developer-terms/",
+        "id": "qf-served-public-domain",
+        "url": "https://creativecommons.org/publicdomain/mark/1.0/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:85431ed5993095e447b13d633142199a0738df4f0b0cee66834d4be64e878ca7",
+        "name": "quran_foundation",
+        "sha256": null,
+        "url": "https://api.quran.com/api/v4/verses/by_chapter/{chapter}?translations=19,57&per_page=300&page={page}",
+        "version": "qf-resource-19"
+      }
+    },
+    {
+      "asset_id": "transliteration:57",
+      "description": "English transliteration (QF resource 57)",
+      "details": {
+        "language": "en",
+        "resource_id": "57",
+        "rows": 6236
+      },
+      "kind": "transliteration",
+      "license": {
+        "attribution": "Transliteration: Quran Foundation resource 57. Quran data provided by Quran Foundation.",
+        "evidence_url": "https://api-docs.quran.foundation/legal/developer-terms/",
+        "id": "qf-developer-terms",
+        "url": "https://api-docs.quran.foundation/legal/developer-terms/"
+      },
+      "source": {
+        "bytes": null,
+        "digest": "sha256:aa5528f7f0ef0e6af76b84ca33e6e0741dcad9d8a8271655b3fbae94365223c4",
+        "name": "quran_foundation",
+        "sha256": null,
+        "url": "https://api.quran.com/api/v4/verses/by_chapter/{chapter}?translations=19,57&per_page=300&page={page}",
+        "version": "qf-resource-57"
+      }
+    }
+  ],
+  "attributions": [
+    {
+      "example_asset_id": "quran-metadata:tanzil-1.0",
+      "license_id": "cc-by-3.0",
+      "text": "Quran metadata (surah names, juz/hizb/page/sajdah): Tanzil Project (https://tanzil.net), licensed CC BY 3.0."
+    },
+    {
+      "example_asset_id": "quran-text:tanzil-uthmani-1.1",
+      "license_id": "cc-by-3.0",
+      "text": "Quran text (Uthmani, version 1.1): Tanzil Project (https://tanzil.net), licensed CC BY 3.0. Served verbatim and unmodified."
+    },
+    {
+      "example_asset_id": "recitation-audio:dhikr-alhuda-abdulrahman-alsudais-hafs",
+      "license_id": "cc-by-4.0",
+      "text": "Recitation audio and ayah timing: Abdulrahman Alsudais (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-abdulrahman-alsudais-hafs), licensed CC BY 4.0."
+    },
+    {
+      "example_asset_id": "recitation-audio:dhikr-alhuda-abu-bakr-alshatri-hafs",
+      "license_id": "cc-by-4.0",
+      "text": "Recitation audio and ayah timing: Abu Bakr al-Shatri (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-abu-bakr-alshatri-hafs), licensed CC BY 4.0."
+    },
+    {
+      "example_asset_id": "recitation-audio:dhikr-alhuda-mahmoud-khalil-alhussary-hafs",
+      "license_id": "cc-by-4.0",
+      "text": "Recitation audio and ayah timing: Mahmoud Khalil Al-Husary (Hafs 'an Asim, Mujawwad), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-mahmoud-khalil-alhussary-hafs), licensed CC BY 4.0."
+    },
+    {
+      "example_asset_id": "recitation-audio:dhikr-alhuda-mishari-alafasy-hafs",
+      "license_id": "cc-by-4.0",
+      "text": "Recitation audio and ayah timing: Mishary Rashid Al-Afasy (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-mishari-alafasy-hafs), licensed CC BY 4.0."
+    },
+    {
+      "example_asset_id": "recitation-audio:dhikr-alhuda-muhammad-siddiq-alminshawi-hafs",
+      "license_id": "cc-by-4.0",
+      "text": "Recitation audio and ayah timing: Mohamed Siddiq al-Minshawi (Hafs 'an Asim, Murattal), provided by Dhikr Al-Huda App on the Internet Archive (item dhikr-alhuda-muhammad-siddiq-alminshawi-hafs), licensed CC BY 4.0."
+    },
+    {
+      "example_asset_id": "translation:19",
+      "license_id": "qf-served-public-domain",
+      "text": "Translation: Mohammed Marmaduke Pickthall, The Meaning of the Glorious Koran (1930, public domain). Served as Quran Foundation resource 19; Quran data provided by Quran Foundation."
+    },
+    {
+      "example_asset_id": "transliteration:57",
+      "license_id": "qf-developer-terms",
+      "text": "Transliteration: Quran Foundation resource 57. Quran data provided by Quran Foundation."
+    }
+  ],
+  "bundle": {
+    "audio_files": 1710,
+    "ayahs": 6236,
+    "database": {
+      "bytes": 6148096,
+      "file": "ezber-content.sqlite",
+      "logical_digest": "sha256:0bf94c6b66daf03ec3954caac59a20b02d912e56e69926153b55cb97f757a785",
+      "sha256": "sha256:69fe27d174e05d999147f6c938e8445ae805e837e02a8a0419534be05098bb29"
+    },
+    "reciters": 5,
+    "segments": 31180,
+    "surahs": 114,
+    "translations": [
+      {
+        "language": "en",
+        "name": "M. Pickthall",
+        "resource_id": "19"
+      }
+    ],
+    "transliterations": [
+      {
+        "language": "en",
+        "name": "Transliteration",
+        "resource_id": "57"
+      }
+    ],
+    "words": 0
+  },
+  "distribution_policy": {
+    "deny_hosts": [
+      "quranicaudio.com"
+    ],
+    "deny_reason": "QuranicAudio.com permits personal use only and forbids commercial use; Ezber must not ship QuranicAudio-backed recordings.",
+    "deny_url_substrings": [
+      "quranicaudio"
+    ]
+  },
+  "generated_by": {
+    "name": "ezber-content-pipeline",
+    "pipeline_version": "0.1.0",
+    "schema_version": 1,
+    "version": "0.1.0"
+  },
+  "licenses": {
+    "cc-by-3.0": {
+      "attribution_required": true,
+      "commercial_use": "allowed",
+      "name": "Creative Commons Attribution 3.0 Unported",
+      "notice_required": true,
+      "obligations": [
+        "Copy and distribute the Quran text verbatim only; changing the text is not allowed.",
+        "Clearly indicate the source (Tanzil Project) and link to https://tanzil.net so users can track changes.",
+        "Reproduce the Tanzil copyright notice in all verbatim copies of the text and in all files derived from or containing a substantial portion of it (shipped as TANZIL-NOTICE.txt)."
+      ],
+      "redistribution": "allowed_with_conditions",
+      "spdx": "CC-BY-3.0",
+      "url": "https://creativecommons.org/licenses/by/3.0/"
+    },
+    "cc-by-4.0": {
+      "attribution_required": true,
+      "commercial_use": "allowed",
+      "name": "Creative Commons Attribution 4.0 International",
+      "notice_required": false,
+      "obligations": [
+        "Credit the recitation/timing distributor (Dhikr Al-Huda App) and the reciter by name.",
+        "Link the license (https://creativecommons.org/licenses/by/4.0/) and indicate the Internet Archive item the files were obtained from.",
+        "The pipeline does not alter the audio or timing files; only checksums and metadata are copied."
+      ],
+      "redistribution": "allowed",
+      "spdx": "CC-BY-4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "qf-developer-terms": {
+      "attribution_required": true,
+      "commercial_use": "allowed_with_conditions",
+      "name": "Quran Foundation Content API Developer Terms",
+      "notice_required": false,
+      "obligations": [
+        "Display may be used in commercial, freemium and ad-supported apps, but QF content and raw API data may not be sold, sublicensed or redistributed.",
+        "Do not cache or store QF content longer than 1 week except through the Content Sync APIs, which require a re-sync at least every 7 days.",
+        "Never call the OAuth2 token endpoint from browser/mobile code and never ship the client_secret; use a server-side token broker (Server-Only Rule).",
+        "Credit Quran Foundation and each edition/reciter by name."
+      ],
+      "redistribution": "not_allowed",
+      "spdx": "LicenseRef-QuranFoundation-DeveloperTerms",
+      "url": "https://api-docs.quran.foundation/legal/developer-terms/"
+    },
+    "qf-served-public-domain": {
+      "attribution_required": true,
+      "commercial_use": "allowed_with_conditions",
+      "name": "Public-domain work served by Quran Foundation under its Developer Terms",
+      "notice_required": false,
+      "obligations": [
+        "The underlying English translation (M. Pickthall, 1930) is in the public domain; the copy bundled here is the Quran Foundation-served resource, so the QF Developer Terms apply to this copy.",
+        "Credit Quran Foundation and the translator; do not sell or redistribute the raw rows.",
+        "Re-check QF serving terms before publishing; the underlying text itself stays public domain."
+      ],
+      "redistribution": "not_allowed",
+      "spdx": "LicenseRef-PublicDomain-with-QF-ServingTerms",
+      "url": "https://creativecommons.org/publicdomain/mark/1.0/"
+    }
+  },
+  "manifest_version": 1
+}

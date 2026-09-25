@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Local secrets: never commit QF client credentials or broker config
+.env
+.env.*
+*.local.json
+
+# Pipeline HTTP cache and throwaway output
+content-pipeline/.cache/
+content-pipeline/build/*.sqlite
+content-pipeline/build/*.sqlite-journal
+content-pipeline/build/*.sqlite-wal
+content-pipeline/build/*.sqlite-shm
+content-pipeline/build/build-report.json
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/

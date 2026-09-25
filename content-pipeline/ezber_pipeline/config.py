@@ -1,0 +1,205 @@
+"""Configuration loading.
+
+All configuration is committed JSON under ``content-pipeline/config``. This
+module is the single place that knows the on-disk shape; the rest of the
+pipeline consumes plain dicts/objects.
+"""
+
+from __future__ import annotations
+
+import os
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+from .canonical import load_json
+from .errors import ConfigError
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+DEFAULT_CONFIG_DIR = REPO_ROOT / "content-pipeline" / "config"
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "content-pipeline" / "build"
+DEFAULT_CACHE_DIR = REPO_ROOT / "content-pipeline" / ".cache"
+LICENSE_REGISTRY_PATH = REPO_ROOT / "licenses" / "registry.json"
+CONTENT_SCHEMA_PATH = REPO_ROOT / "schema" / "content_schema.sql"
+USER_SCHEMA_PATH = REPO_ROOT / "schema" / "user_schema.sql"
+
+
+@dataclass(frozen=True)
+class SourceConfig:
+    id: str
+    kind: str
+    url: str
+    description: str
+    license_id: str
+    license_url: str
+    license_evidence_url: str
+    attribution: str
+    notice_file: str | None = None
+
+
+@dataclass(frozen=True)
+class PipelineConfig:
+    raw: dict[str, Any]
+    config_dir: Path
+    sources: dict[str, SourceConfig] = field(default_factory=dict)
+    translations: list[dict[str, Any]] = field(default_factory=list)
+    transliterations: list[dict[str, Any]] = field(default_factory=list)
+    reciters: list[dict[str, Any]] = field(default_factory=list)
+    catalog_policy: dict[str, Any] = field(default_factory=dict)
+    licenses: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    @property
+    def pipeline(self) -> dict[str, Any]:
+        return self.raw["pipeline"]
+
+    @property
+    def name(self) -> str:
+        return self.pipeline["name"]
+
+    @property
+    def version(self) -> str:
+        return self.pipeline["version"]
+
+    @property
+    def schema_version(self) -> int:
+        return int(self.pipeline["schema_version"])
+
+    @property
+    def expected_surah_count(self) -> int:
+        return int(self.pipeline["expected_surah_count"])
+
+    @property
+    def expected_ayah_count(self) -> int:
+        return int(self.pipeline["expected_ayah_count"])
+
+    @property
+    def user_agent(self) -> str:
+        return self.pipeline["user_agent"]
+
+    @property
+    def http(self) -> dict[str, Any]:
+        return self.pipeline["http"]
+
+    @property
+    def policy(self) -> dict[str, Any]:
+        return self.raw["policy"]
+
+    @property
+    def quran_foundation(self) -> dict[str, Any]:
+        return self.raw["quran_foundation"]
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ConfigError(message)
+
+
+def load_licenses(path: Path = LICENSE_REGISTRY_PATH) -> dict[str, dict[str, Any]]:
+    if not path.exists():
+        raise ConfigError(f"license registry not found: {path}")
+    data = load_json(str(path))
+    _require(data.get("registry_version") == 1, f"unsupported license registry version in {path}")
+    licenses = {}
+    for entry in data.get("licenses", []):
+        license_id = entry.get("id")
+        _require(bool(license_id), f"license entry without id in {path}")
+        _require(license_id not in licenses, f"duplicate license id {license_id!r} in {path}")
+        _require(bool(entry.get("attribution")), f"license {license_id!r} has no attribution template")
+        licenses[license_id] = entry
+    return licenses
+
+
+def load_config(config_dir: Path | None = None) -> PipelineConfig:
+    config_dir = Path(config_dir) if config_dir else DEFAULT_CONFIG_DIR
+    if not config_dir.is_dir():
+        raise ConfigError(f"config directory not found: {config_dir}")
+
+    raw = load_json(str(config_dir / "sources.json"))
+    _require(raw.get("config_version") == 1, "unsupported sources.json config_version")
+
+    sources: dict[str, SourceConfig] = {}
+    for source_id, entry in raw.get("sources", {}).items():
+        sources[source_id] = SourceConfig(
+            id=source_id,
+            kind=entry["kind"],
+            url=entry["url"],
+            description=entry.get("description", ""),
+            license_id=entry["license_id"],
+            license_url=entry["license_url"],
+            license_evidence_url=entry["license_evidence_url"],
+            attribution=entry["attribution"],
+            notice_file=entry.get("notice_file"),
+        )
+
+    translations = load_json(str(config_dir / "translations.json")).get("editions", [])
+    transliterations = load_json(str(config_dir / "transliterations.json")).get("editions", [])
+    reciter_doc = load_json(str(config_dir / "reciters.json"))
+    reciters = reciter_doc.get("reciters", [])
+    catalog_policy = reciter_doc.get("catalog_policy", {})
+
+    licenses = load_licenses()
+
+    config = PipelineConfig(
+        raw=raw,
+        config_dir=config_dir,
+        sources=sources,
+        translations=translations,
+        transliterations=transliterations,
+        reciters=reciters,
+        catalog_policy=catalog_policy,
+        licenses=licenses,
+    )
+    validate_config(config)
+    return config
+
+
+def validate_config(config: PipelineConfig) -> None:
+    """Fail fast on configuration that cannot produce a valid bundle."""
+    required_sources = {"tanzil_text", "tanzil_metadata"}
+    missing = required_sources - set(config.sources)
+    _require(not missing, f"missing required sources: {sorted(missing)}")
+
+    _require(config.transliterations, "no transliteration editions configured")
+    _require(config.reciters, "no reciter candidates configured")
+
+    known_license_ids = set(config.licenses)
+    for source in config.sources.values():
+        _require(
+            source.license_id in known_license_ids,
+            f"source {source.id!r} references unknown license {source.license_id!r}",
+        )
+    for edition in config.translations + config.transliterations:
+        _require(
+            edition.get("license_id") in known_license_ids,
+            f"edition {edition.get('resource_id')!r} references unknown license {edition.get('license_id')!r}",
+        )
+    for reciter in config.reciters:
+        _require(bool(reciter.get("remote_id")), "reciter without remote_id")
+        for field_name in config.policy["reciter_required_fields"]:
+            _require(
+                bool(reciter.get(field_name)),
+                f"reciter {reciter.get('remote_id')!r} missing required field {field_name!r}",
+            )
+        _require(
+            reciter["license_id"] in known_license_ids,
+            f"reciter {reciter['remote_id']!r} references unknown license {reciter['license_id']!r}",
+        )
+        _require(bool(reciter.get("styles")), f"reciter {reciter['remote_id']!r} has no styles")
+        style_ids = [style["id"] for style in reciter["styles"]]
+        _require(len(style_ids) == len(set(style_ids)), f"reciter {reciter['remote_id']!r} has duplicate style ids")
+        _require(
+            reciter.get("default_style") in style_ids,
+            f"reciter {reciter['remote_id']!r} default_style not in styles",
+        )
+        for style in reciter["styles"]:
+            _require(bool(style.get("bitrates")), f"reciter {reciter['remote_id']!r} style {style['id']!r} has no bitrates")
+            if style["id"] == reciter.get("default_style"):
+                _require(
+                    reciter.get("default_bitrate") in style.get("bitrates", []),
+                    f"reciter {reciter['remote_id']!r} default_bitrate not in style {style['id']!r} bitrates",
+                )
+
+
+def resolve_env_credentials() -> tuple[str | None, str | None]:
+    """Read QF OAuth credentials from the environment; never from the repo."""
+    return os.environ.get("QF_CLIENT_ID"), os.environ.get("QF_CLIENT_SECRET")

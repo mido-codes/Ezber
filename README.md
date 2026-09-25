@@ -78,3 +78,42 @@ iPhone first (Swift, SwiftUI), then Android (Kotlin, Jetpack Compose). Native ba
 ## Design scope for this round
 
 The main screens — home/continue, the study player, the preset builder, the preset library, and the in-car view — as high-fidelity iPhone mockups, including the key states (empty, in progress, completed) in both light and dark themes.
+
+## Current repository state (M0 foundation)
+
+The repo currently holds the **content + legal foundation** — no app UI and no
+car integration yet. The implementation of the screens above starts at M1 (see
+the `quran-app-tech` technical plan, 2026-09-25).
+
+| Path | What it is |
+|---|---|
+| `content-pipeline/` | Reproducible fetch → normalize → validate → package pipeline (Python, stdlib only) |
+| `schema/content_schema.sql` | Shared content DB schema (read-only in the app) |
+| `schema/user_schema.sql` | Shared user DB schema (presets, progress, notes + FTS5, sessions, plan state) |
+| `licenses/registry.json` | Machine-readable license registry with obligations and attribution templates |
+| `licenses/notices/` | Verbatim upstream notices shipped with the bundle (Tanzil) |
+| `docs/` | Pipeline, licensing, schema and open captain-decision notes |
+| `content-pipeline/build/` | Generated bundle artifacts (manifests committed, SQLite ignored) |
+
+```sh
+make pipeline   # fetch upstream content, validate it, write build/ (network)
+make test       # offline unit + end-to-end tests (no network, ~4s)
+make verify     # re-check the built SQLite bundle against its manifest
+```
+
+The pipeline fetches **Tanzil Quran text v1.1** (Uthmani, CC BY 3.0, stored
+verbatim with its notice), the **Quran Foundation transliteration resource 57**
+and the **public-domain Pickthall translation served as resource 19**, then
+packages 114 surahs, 6236 ayahs and CC BY 4.0–licensed chapter recitations with
+ayah timing into a deterministic SQLite bundle plus a content manifest, audio
+manifest and credits file. The first build pins every upstream payload in
+`content-pipeline/config/source-lock.json`; later builds fail if upstream
+content changes until the change is reviewed.
+
+Read `docs/licensing.md` before shipping anything, and
+`docs/captain-decisions.md` for the choices that remain with the captain.
+
+**Non-negotiables:** never modify the Quran text (Tanzil 1.1 verbatim); no
+`client_secret` in the repo (QF credentials from the environment only); no
+QuranicAudio-backed recordings (build fails on the deny-list); content and user
+data stay in separate SQLite files.
