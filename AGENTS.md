@@ -34,6 +34,7 @@ Ezber is a Quran memorization and listening app for iPhone and Android. The repo
 - Playback is interface-first: `DrillSessionService` expresses a drill as a verse × repetition `DrillQueue`, and `AudioSessionService` is a protocol with a stub. Views must keep working when the stubs are replaced.
 - Screens render from `ios/Ezber/Placeholder/PlaceholderContent.swift` until the content pipeline produces `content.sqlite`.
 - Open captain calls stay isolated behind `TODO(open-call: ...)` markers: in-car text policy and tab-shell shape. Launch language resolved English-first (2026-09-25).
+- CI is `.github/workflows/ci.yml`: PRs to `main` and pushes to `main` run three jobs (`content`, `android`, `ios`), each a no-op until its directory (`content-pipeline/`, `android/`, `ios/`) exists, so landing a platform activates its job automatically. Action versions are pinned by commit SHA.
 
 ## Maintaining this file
 
