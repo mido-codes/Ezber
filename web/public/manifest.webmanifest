@@ -1,0 +1,36 @@
+{
+  "name": "Ezber — Quran memorization and listening",
+  "short_name": "Ezber",
+  "description": "Pick a surah and a section, repeat each verse, follow the transliteration, and keep everything offline. No account required.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#EDEBE5",
+  "theme_color": "#EDEBE5",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "books", "music"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

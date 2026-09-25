@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">Ezber app icon</title>
+  <desc id="desc">A simple open-book mark in cream on a deep green background.</desc>
+  <rect width="128" height="128" rx="30" fill="#24483D"/>
+  <path d="M64 42c-7-7-17-10-29-10-5 0-9 4-9 9v43c0 4 3 7 7 7 13 0 23 3 31 10V42Z" fill="none" stroke="#FFF9EE" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <path d="M64 42c7-7 17-10 29-10 5 0 9 4 9 9v43c0 4-3 7-7 7-13 0-23 3-31 10V42Z" fill="none" stroke="#FFF9EE" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+  <path d="M64 42v59" fill="none" stroke="#FFF9EE" stroke-linecap="round" stroke-width="7"/>
+</svg>

@@ -13,7 +13,7 @@ Ezber (Turkish for "memorization") is a Quran memorization and listening app for
 
 ## Platforms
 
-iPhone first, then Android, each with native background audio and car support. Everything works offline and no account is required.
+iPhone first, then Android, each with native background audio and car support. The same MVP also ships as a web app and installable PWA in `web/` (everything except CarPlay). Everything works offline and no account is required.
 
 ## Status
 
