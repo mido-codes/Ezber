@@ -29,8 +29,15 @@ from ezber_pipeline.errors import PipelineError
 from ezber_pipeline.package import build_content_manifest, create_database
 from ezber_pipeline.webexport import (
     AYAH_COLUMNS,
+    LAYOUT_GROUPED,
+    LAYOUT_SINGLE,
+    RECITER_COLUMNS,
     SEGMENT_COLUMNS,
+    SINGLE_WEB_BUNDLE_VERSION,
+    SURAH_COLUMNS,
+    TRANSLITERATION_ROW_COLUMNS,
     WEB_BUNDLE_VERSION,
+    WORD_COLUMNS,
     export_web,
 )
 from tests import helpers
@@ -191,8 +198,8 @@ class WebExportTests(unittest.TestCase):
         (self.build_dir / "content-manifest.json").write_bytes(canonical_json_bytes(manifest))
         (self.build_dir / "TANZIL-NOTICE.txt").write_bytes(b"Tanzil notice fixture\n")
 
-    def export(self, name: str = "web"):
-        return export_web(self.build_dir, web_dir=self.root / name)
+    def export(self, name: str = "web", **kwargs):
+        return export_web(self.build_dir, web_dir=self.root / name, **kwargs)
 
     def payload_bytes(self, web_dir: Path) -> dict[str, bytes]:
         return {
@@ -201,10 +208,36 @@ class WebExportTests(unittest.TestCase):
             if path.is_file()
         }
 
-    def test_index_inventory_covers_every_payload(self) -> None:
-        result = self.export()
+    def assert_inventory_covers_every_payload(self, result) -> None:
+        """Every emitted file except index.json is listed with a real digest."""
         index = json.loads(result.index_path.read_bytes())
+        listed = {entry["path"]: entry for entry in index["files"]}
+        actual = {
+            path.relative_to(result.web_dir).as_posix()
+            for path in result.web_dir.rglob("*")
+            if path.is_file() and path != result.index_path
+        }
+        self.assertEqual(set(listed), actual)
+        for path, entry in listed.items():
+            data = (result.web_dir / path).read_bytes()
+            self.assertEqual(entry["sha256"], sha256_digest(data), path)
+            self.assertEqual(entry["bytes"], len(data), path)
+            self.assertTrue(data.endswith(b"\n"), path)
+            if path.endswith(".json"):
+                self.assertEqual(data, canonical_json_bytes(json.loads(data), indent=None), path)
+        expected_digest = {key: value for key, value in index.items() if key != "bundle_digest"}
+        self.assertEqual(index["bundle_digest"], digest_json(expected_digest))
+
+    def test_grouped_index_carries_the_catalogue_without_verse_text(self) -> None:
+        result = self.export()
+        self.assertEqual(result.layout, LAYOUT_GROUPED)
+        index_bytes = result.index_path.read_bytes()
+        self.assertTrue(index_bytes.endswith(b"\n"))
+        self.assertEqual(index_bytes, canonical_json_bytes(json.loads(index_bytes), indent=None))
+        index = json.loads(index_bytes)
+
         self.assertEqual(index["web_bundle_version"], WEB_BUNDLE_VERSION)
+        self.assertEqual(index["layout"], LAYOUT_GROUPED)
         self.assertEqual(
             index["counts"],
             {
@@ -225,78 +258,106 @@ class WebExportTests(unittest.TestCase):
         self.assertEqual(index["meta"]["schema_version"], "1")
         self.assertEqual(index["licenses_file"], "licenses.json")
 
-        listed = {entry["path"]: entry for entry in index["files"]}
-        actual = {
-            path.relative_to(result.web_dir).as_posix()
-            for path in result.web_dir.rglob("*")
-            if path.is_file() and path != result.index_path
-        }
-        self.assertEqual(set(listed), actual)
-        for path, entry in listed.items():
-            data = (result.web_dir / path).read_bytes()
-            self.assertEqual(entry["sha256"], sha256_digest(data), path)
-            self.assertEqual(entry["bytes"], len(data), path)
-            self.assertTrue(data.endswith(b"\n"), path)
-            if path.endswith(".json"):
-                self.assertEqual(data, canonical_json_bytes(json.loads(data), indent=None), path)
-        self.assertEqual(index["bundle_digest"], digest_json(index["files"]))
+        # The surah summary and the reciter catalogue are inline, so booting the
+        # app needs no extra request.
+        self.assertEqual(index["surahs"]["columns"], list(SURAH_COLUMNS))
+        self.assertEqual([row[0] for row in index["surahs"]["rows"]], [1, 2])
+        self.assertEqual([row[4] for row in index["surahs"]["rows"]], [2, 1])
+        self.assertEqual(index["reciters"]["columns"], list(RECITER_COLUMNS))
+        self.assertEqual(index["reciters"]["rows"][0][1], "tiny-reciter")
 
-    def test_tables_mirror_the_database(self) -> None:
+        # No verse text and no timings in the eager index.
+        self.assertNotIn(b"text_uthmani", index_bytes)
+        self.assertNotIn(b"start_ms", index_bytes)
+        self.assertNotIn(helpers.synthetic_ayah_text(1, 1).encode("utf-8"), index_bytes)
+
+        self.assert_inventory_covers_every_payload(result)
+
+    def test_surah_files_group_ayahs_words_and_transliteration_rows(self) -> None:
+        result = self.export()
+        index = json.loads(result.index_path.read_bytes())
+        surah_entries = {entry["surah_id"]: entry for entry in index["files"] if entry["kind"] == "surah"}
+        self.assertEqual(set(surah_entries), {1, 2})
+        self.assertEqual(surah_entries[1]["path"], "surahs/1.json")
+        self.assertEqual(surah_entries[1]["ayahs"], 2)
+        self.assertEqual(surah_entries[1]["words"], 4)
+
+        first = json.loads((result.web_dir / "surahs/1.json").read_bytes())
+        self.assertEqual(first["surah_id"], 1)
+        self.assertEqual(first["ayahs"]["columns"], list(AYAH_COLUMNS))
+        self.assertEqual(
+            first["ayahs"]["rows"],
+            [
+                [1, 1, 1, "1:1", helpers.synthetic_ayah_text(1, 1), "transliteration 1:1", 1, 1, 1, 0, None],
+                [2, 1, 2, "1:2", helpers.synthetic_ayah_text(1, 2), "transliteration 1:2", 1, 1, 1, 0, None],
+            ],
+        )
+        self.assertEqual(first["transliteration_rows"]["columns"], list(TRANSLITERATION_ROW_COLUMNS))
+        self.assertEqual(
+            first["transliteration_rows"]["rows"],
+            [[57, 1, "transliteration 1:1"], [57, 2, "transliteration 1:2"]],
+        )
+        self.assertEqual(first["words"]["columns"], list(WORD_COLUMNS))
+        self.assertEqual([row[0] for row in first["words"]["rows"]], [1, 2, 3, 4])
+        self.assertEqual([row[1] for row in first["words"]["rows"]], [1, 1, 2, 2])
+        self.assertEqual(first["words"]["rows"][0][4], "first-token")
+
+        second = json.loads((result.web_dir / "surahs/2.json").read_bytes())
+        self.assertEqual(second["surah_id"], 2)
+        self.assertEqual([row[0] for row in second["ayahs"]["rows"]], [3])
+        self.assertEqual([row[1] for row in second["words"]["rows"]], [3, 3])
+        self.assertEqual([row[1] for row in second["transliteration_rows"]["rows"]], [3])
+
+    def test_segments_are_grouped_per_reciter_and_surah(self) -> None:
+        result = self.export()
+        index = json.loads(result.index_path.read_bytes())
+        segment_entries = [entry for entry in index["files"] if entry["kind"] == "segments"]
+        self.assertEqual([entry["path"] for entry in segment_entries], ["segments/1/1.json", "segments/1/2.json"])
+        self.assertEqual([entry["reciter_id"] for entry in segment_entries], [1, 1])
+        self.assertEqual([entry["surah_id"] for entry in segment_entries], [1, 2])
+        self.assertEqual([entry["variant"] for entry in segment_entries], ["murattal", "murattal"])
+        self.assertEqual([entry["rows"] for entry in segment_entries], [4, 1])
+
+        first = json.loads((result.web_dir / "segments/1/1.json").read_bytes())
+        self.assertEqual(first["reciter_id"], 1)
+        self.assertEqual(first["variant"], "murattal")
+        self.assertEqual(first["surah_id"], 1)
+        self.assertEqual(first["columns"], list(SEGMENT_COLUMNS))
+        self.assertEqual(
+            first["rows"],
+            [[1, 0, 0, 500], [1, 1, 0, 250], [1, 2, 250, 500], [2, 0, 500, 900]],
+        )
+        second = json.loads((result.web_dir / "segments/1/2.json").read_bytes())
+        self.assertEqual(second["surah_id"], 2)
+        self.assertEqual(second["rows"], [[3, 0, 0, 700]])
+
+    def test_catalogue_files_mirror_the_database(self) -> None:
         result = self.export()
         connection = sqlite3.connect(self.build_dir / "ezber-content.sqlite")
         try:
-            surahs = json.loads((result.web_dir / "surahs.json").read_bytes())
-            self.assertEqual(
-                surahs["rows"],
-                [list(row) for row in connection.execute(
-                    "SELECT id, name_arabic, name_latin, name_english, verses_count, "
-                    "revelation, bismillah_pre, revelation_order, rukus FROM surahs ORDER BY id"
-                ).fetchall()],
-            )
-
-            ayahs = json.loads((result.web_dir / "ayahs.json").read_bytes())
-            self.assertEqual(ayahs["columns"], list(AYAH_COLUMNS))
-            self.assertEqual(
-                ayahs["rows"][0],
-                [1, 1, 1, "1:1", helpers.synthetic_ayah_text(1, 1), "transliteration 1:1", 1, 1, 1, 0, None],
-            )
-
-            words = json.loads((result.web_dir / "words.json").read_bytes())
-            self.assertEqual(len(words["rows"]), 6)
-            self.assertEqual(words["rows"][0][4], "first-token")
-
-            reciters = json.loads((result.web_dir / "reciters.json").read_bytes())
-            self.assertEqual(reciters["rows"][0][1], "tiny-reciter")
-            self.assertEqual(reciters["rows"][0][6], "cc-by-4.0")
-
             audio = json.loads((result.web_dir / "audio-files.json").read_bytes())
-            self.assertEqual([row[7] for row in audio["rows"]], ["https://example.org/1.m4a", "https://example.org/2.m4a"])
+            self.assertEqual(
+                [row[7] for row in audio["rows"]],
+                ["https://example.org/1.m4a", "https://example.org/2.m4a"],
+            )
             self.assertEqual([row[11] for row in audio["rows"]], ["sha1:aa", "sha1:bb"])
 
             translations = json.loads((result.web_dir / "translations.json").read_bytes())
             self.assertEqual(translations["rows"][0][1], "19")
             transliterations = json.loads((result.web_dir / "transliterations.json").read_bytes())
             self.assertEqual(transliterations["rows"][0][1], "tanzil.en.transliteration")
+
+            expected_surahs = connection.execute(
+                "SELECT id, name_arabic, name_latin, name_english, verses_count, "
+                "revelation, bismillah_pre, revelation_order, rukus FROM surahs ORDER BY id"
+            ).fetchall()
+            index = json.loads(result.index_path.read_bytes())
+            self.assertEqual(
+                index["surahs"]["rows"],
+                [list(row) for row in expected_surahs],
+            )
         finally:
             connection.close()
-
-    def test_segments_are_grouped_per_reciter(self) -> None:
-        result = self.export()
-        index = json.loads(result.index_path.read_bytes())
-        segment_entries = [entry for entry in index["files"] if entry["kind"] == "segments"]
-        self.assertEqual(len(segment_entries), 1)
-        entry = segment_entries[0]
-        self.assertEqual(entry["path"], "segments/1.json")
-        self.assertEqual(entry["reciter_id"], 1)
-        self.assertEqual(entry["variant"], "murattal")
-        document = json.loads((result.web_dir / entry["path"]).read_bytes())
-        self.assertEqual(document["reciter_id"], 1)
-        self.assertEqual(document["variant"], "murattal")
-        self.assertEqual(document["columns"], list(SEGMENT_COLUMNS))
-        self.assertEqual(
-            document["rows"],
-            [[1, 0, 0, 500], [1, 1, 0, 250], [1, 2, 250, 500], [2, 0, 500, 900], [3, 0, 0, 700]],
-        )
 
     def test_licenses_attributions_and_notice_are_attached(self) -> None:
         result = self.export()
@@ -317,6 +378,27 @@ class WebExportTests(unittest.TestCase):
         self.assertEqual(notice, b"Tanzil notice fixture\n")
         self.assertEqual(licenses["notices"][0]["sha256"], sha256_digest(notice))
         self.assertEqual(licenses["notices"][0]["path"], "TANZIL-NOTICE.txt")
+
+    def test_single_layout_remains_available(self) -> None:
+        result = self.export("web-single", layout=LAYOUT_SINGLE)
+        self.assertEqual(result.layout, LAYOUT_SINGLE)
+        index = json.loads(result.index_path.read_bytes())
+        self.assertEqual(index["web_bundle_version"], SINGLE_WEB_BUNDLE_VERSION)
+        self.assertEqual(index["layout"], LAYOUT_SINGLE)
+        for name in ("surahs.json", "ayahs.json", "words.json", "reciters.json", "segments/1.json"):
+            self.assertTrue((result.web_dir / name).exists(), name)
+        document = json.loads((result.web_dir / "segments/1.json").read_bytes())
+        self.assertEqual(document["reciter_id"], 1)
+        self.assertEqual(document["variant"], "murattal")
+        self.assertEqual(
+            document["rows"],
+            [[1, 0, 0, 500], [1, 1, 0, 250], [1, 2, 250, 500], [2, 0, 500, 900], [3, 0, 0, 700]],
+        )
+        self.assert_inventory_covers_every_payload(result)
+
+    def test_unknown_layout_is_rejected(self) -> None:
+        with self.assertRaises(PipelineError):
+            self.export(layout="bogus")
 
     def test_export_is_byte_deterministic_and_repeatable(self) -> None:
         first = self.export("web-first")
@@ -362,7 +444,9 @@ class WebExportTests(unittest.TestCase):
             code = cli.main(["export-web", "--output-dir", str(self.build_dir)])
         self.assertEqual(code, 0)
         self.assertTrue((self.build_dir / "web" / "index.json").exists())
+        self.assertTrue((self.build_dir / "web" / "surahs" / "1.json").exists())
         self.assertIn("web bundle:", stdout.getvalue())
+        self.assertIn("layout:        grouped", stdout.getvalue())
         self.assertIn("bundle digest:", stdout.getvalue())
 
         with redirect_stdout(io.StringIO()) as stdout:
@@ -377,6 +461,21 @@ class WebExportTests(unittest.TestCase):
             )
         self.assertEqual(code, 0)
         self.assertTrue((self.root / "custom-web" / "index.json").exists())
+
+        with redirect_stdout(io.StringIO()):
+            code = cli.main(
+                [
+                    "export-web",
+                    "--output-dir",
+                    str(self.build_dir),
+                    "--web-dir",
+                    str(self.root / "legacy-web"),
+                    "--layout",
+                    "single",
+                ]
+            )
+        self.assertEqual(code, 0)
+        self.assertTrue((self.root / "legacy-web" / "ayahs.json").exists())
 
     def test_cli_export_web_missing_bundle(self) -> None:
         with redirect_stderr(io.StringIO()) as stderr:

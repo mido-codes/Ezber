@@ -6,30 +6,45 @@ notice) plus the license registry, and writes compact JSON the web app can seed
 IndexedDB from. It never modifies the SQLite bundle or the manifests: the web
 payload is a projection of exactly the same data, so the two cannot drift.
 
-Layout (all JSON is canonical compact UTF-8, sorted keys, single trailing
-newline):
+Two layouts are supported. The grouped layout (default) is what the lazily
+loading web app boots from: a small ``index.json`` plus one file per surah and
+one file per reciter/surah fetched on demand.
 
-    index.json             version, counts, content_meta, licence pointer and a
-                           sha256/size inventory of every other file
-    surahs.json            surahs table
-    ayahs.json             ayahs table plus the primary transliteration edition
-                           joined as a ``transliteration`` column
-    words.json             words table
-    reciters.json          reciters table
-    audio-files.json       audio_files table (url, checksum, bytes, bitrate,
-                           duration, kind, chapter/ayah); build-time download
-                           bookkeeping (local_path, downloaded_at) is omitted
-    segments/<reciter>.json  segments table for one reciter, with reciter_id and
-                           variant hoisted into the file header
-    transliterations.json  transliteration editions
-    translations.json      translation editions (reserved and currently empty)
-    licenses.json          used registry entries, attribution strings and the
-                           notice digests
-    TANZIL-NOTICE.txt      the verbatim Tanzil copyright notice
+Grouped (``layout="grouped"``, the default; all JSON is canonical compact
+UTF-8, sorted keys, single trailing newline):
+
+    index.json                     version, layout, counts, content_meta, the
+                                   surah list and reciter catalogue inline, and a
+                                   sha256/size inventory of every other file.
+                                   Carries no verse text and no timings
+    surahs/<surah_id>.json         one surah: its ayahs (primary transliteration
+                                   edition joined as ``transliteration``), the
+                                   primary edition's ``transliteration_rows``
+                                   and its ``words`` rows
+    segments/<reciter_id>/<surah_id>.json
+                                   the segment rows for one reciter and surah,
+                                   with reciter_id, variant and surah_id hoisted
+                                   into the header
+    audio-files.json               audio_files table (url, checksum, bytes,
+                                   bitrate, duration, kind, chapter/ayah);
+                                   build-time download bookkeeping (local_path,
+                                   downloaded_at) is omitted
+    transliterations.json          transliteration editions
+    translations.json              translation editions (reserved and empty)
+    licenses.json                  used registry entries, attribution strings
+                                   and the notice digests
+    TANZIL-NOTICE.txt              the verbatim Tanzil copyright notice
+
+The single layout (``layout="single"``) is the original table-per-file payload
+kept for older consumers: ``surahs.json``, ``ayahs.json``, ``words.json``,
+``reciters.json``, ``audio-files.json``, ``segments/<reciter_id>.json``,
+``translations.json``, ``transliterations.json``, ``licenses.json`` and
+``TANZIL-NOTICE.txt``.
 
 Payload files are table documents: ``{"columns": [...], "rows": [[...]]}``.
 Rows mirror the schema columns in primary-key order, so a consumer can build
-IndexedDB object stores without re-sorting.
+IndexedDB object stores without re-sorting. Every file's ``sha256`` and byte
+size is listed in ``index.json.files``.
 """
 
 from __future__ import annotations
@@ -37,7 +52,7 @@ from __future__ import annotations
 import os
 import shutil
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from itertools import groupby
 from pathlib import Path
@@ -47,9 +62,15 @@ from .canonical import compact_json_bytes, digest_json, load_json, sha256_digest
 from .config import CONTENT_SCHEMA_PATH, load_licenses
 from .errors import PipelineError
 
-WEB_BUNDLE_VERSION = 1
+WEB_BUNDLE_VERSION = 2
+SINGLE_WEB_BUNDLE_VERSION = 1
+LAYOUT_GROUPED = "grouped"
+LAYOUT_SINGLE = "single"
+LAYOUTS = (LAYOUT_GROUPED, LAYOUT_SINGLE)
+DEFAULT_LAYOUT = LAYOUT_GROUPED
 CONTENT_MANIFEST_FILENAME = "content-manifest.json"
 TANZIL_NOTICE_FILENAME = "TANZIL-NOTICE.txt"
+SURAHS_DIRNAME = "surahs"
 SEGMENTS_DIRNAME = "segments"
 
 SURAH_COLUMNS = (
@@ -132,11 +153,14 @@ EDITION_COLUMNS = (
 
 SEGMENT_COLUMNS = ("ayah_id", "word_index", "start_ms", "end_ms")
 
+TRANSLITERATION_ROW_COLUMNS = ("transliteration_id", "ayah_id", "text")
+
 
 @dataclass
 class WebExportResult:
     web_dir: Path
     index_path: Path
+    layout: str = DEFAULT_LAYOUT
     files: dict[str, dict[str, Any]] = field(default_factory=dict)
     counts: dict[str, int] = field(default_factory=dict)
     index: dict[str, Any] = field(default_factory=dict)
@@ -178,27 +202,19 @@ def _commit_workdir(work_dir: Path, web_dir: Path) -> None:
     work_dir.rename(web_dir)
 
 
-def _read_tables(connection: sqlite3.Connection) -> dict[str, list[tuple]]:
-    primary_edition = connection.execute("SELECT id FROM transliterations ORDER BY id LIMIT 1").fetchone()
-    transliteration_id = primary_edition[0] if primary_edition else -1
+def _primary_transliteration_id(connection: sqlite3.Connection) -> int:
+    row = connection.execute("SELECT id FROM transliterations ORDER BY id LIMIT 1").fetchone()
+    return row[0] if row else -1
+
+
+def _read_small_tables(connection: sqlite3.Connection) -> dict[str, list[tuple]]:
+    """Read the tables that stay whole in every layout."""
     return {
         "content_meta": connection.execute(
             "SELECT key, value FROM content_meta ORDER BY key"
         ).fetchall(),
         "surahs": connection.execute(
             f"SELECT {', '.join(SURAH_COLUMNS)} FROM surahs ORDER BY id"
-        ).fetchall(),
-        "ayahs": connection.execute(
-            "SELECT a.id, a.surah_id, a.ayah, a.verse_key, a.text_uthmani, t.text, "
-            "a.juz, a.hizb, a.page, a.sajdah, a.sajdah_type "
-            "FROM ayahs a "
-            "LEFT JOIN transliteration_rows t "
-            "ON t.ayah_id = a.id AND t.transliteration_id = ? "
-            "ORDER BY a.id",
-            (transliteration_id,),
-        ).fetchall(),
-        "words": connection.execute(
-            f"SELECT {', '.join(WORD_COLUMNS)} FROM words ORDER BY id"
         ).fetchall(),
         "reciters": connection.execute(
             f"SELECT {', '.join(RECITER_COLUMNS)} FROM reciters ORDER BY id"
@@ -219,6 +235,63 @@ def _read_tables(connection: sqlite3.Connection) -> dict[str, list[tuple]]:
     }
 
 
+def _read_ayahs(
+    connection: sqlite3.Connection, transliteration_id: int, *, surah_id: int | None = None
+) -> list[tuple]:
+    where = "WHERE a.surah_id = ?" if surah_id is not None else ""
+    params: tuple = (transliteration_id, surah_id) if surah_id is not None else (transliteration_id,)
+    return connection.execute(
+        "SELECT a.id, a.surah_id, a.ayah, a.verse_key, a.text_uthmani, t.text, "
+        "a.juz, a.hizb, a.page, a.sajdah, a.sajdah_type "
+        "FROM ayahs a "
+        "LEFT JOIN transliteration_rows t "
+        "ON t.ayah_id = a.id AND t.transliteration_id = ? "
+        f"{where} ORDER BY a.id",
+        params,
+    ).fetchall()
+
+
+def _read_words(connection: sqlite3.Connection, *, surah_id: int | None = None) -> list[tuple]:
+    if surah_id is None:
+        query = f"SELECT {', '.join(WORD_COLUMNS)} FROM words ORDER BY id"
+        params: tuple = ()
+    else:
+        query = (
+            f"SELECT {', '.join(WORD_COLUMNS)} FROM words "
+            "WHERE ayah_id IN (SELECT id FROM ayahs WHERE surah_id = ?) ORDER BY id"
+        )
+        params = (surah_id,)
+    return connection.execute(query, params).fetchall()
+
+
+def _read_transliteration_rows(
+    connection: sqlite3.Connection, transliteration_id: int, *, surah_id: int | None = None
+) -> list[tuple]:
+    where = "AND ayah_id IN (SELECT id FROM ayahs WHERE surah_id = ?)" if surah_id is not None else ""
+    params: tuple = (transliteration_id, surah_id) if surah_id is not None else (transliteration_id,)
+    return connection.execute(
+        "SELECT transliteration_id, ayah_id, text FROM transliteration_rows "
+        f"WHERE transliteration_id = ? {where} ORDER BY ayah_id",
+        params,
+    ).fetchall()
+
+
+def _table_counts(connection: sqlite3.Connection) -> dict[str, int]:
+    names = (
+        "surahs",
+        "ayahs",
+        "words",
+        "reciters",
+        "audio_files",
+        "segments",
+        "translations",
+        "transliterations",
+    )
+    return {
+        name: connection.execute(f"SELECT COUNT(*) FROM {name}").fetchone()[0] for name in names
+    }
+
+
 def _segment_batches(connection: sqlite3.Connection) -> Iterator[tuple[int, str, list[tuple]]]:
     """Yield (reciter_id, variant, rows) in primary-key order, one per reciter."""
     cursor = connection.execute(
@@ -234,6 +307,36 @@ def _segment_batches(connection: sqlite3.Connection) -> Iterator[tuple[int, str,
                 "the web bundle expects one variant per reciter"
             )
         yield reciter_id, rows[0][1], [(row[2], row[3], row[4], row[5]) for row in rows]
+
+
+def _grouped_segment_batches(
+    connection: sqlite3.Connection,
+) -> Iterator[tuple[int, str, int, list[tuple]]]:
+    """Yield (reciter_id, variant, surah_id, rows) one file per reciter/surah."""
+    cursor = connection.execute(
+        "SELECT s.reciter_id, s.variant, a.surah_id, s.ayah_id, s.word_index, "
+        "s.start_ms, s.end_ms "
+        "FROM segments s JOIN ayahs a ON a.id = s.ayah_id "
+        "ORDER BY s.reciter_id, s.variant, a.surah_id, s.ayah_id, s.word_index"
+    )
+    reciter_variants: dict[int, str] = {}
+    for (reciter_id, surah_id), group in groupby(cursor, key=lambda row: (row[0], row[2])):
+        rows = list(group)
+        variants = {row[1] for row in rows}
+        if len(variants) != 1:
+            raise PipelineError(
+                f"segments for reciter {reciter_id} use more than one variant; "
+                "the web bundle expects one variant per reciter"
+            )
+        variant = rows[0][1]
+        if reciter_variants.setdefault(reciter_id, variant) != variant:
+            raise PipelineError(
+                f"segments for reciter {reciter_id} use more than one variant; "
+                "the web bundle expects one variant per reciter"
+            )
+        yield reciter_id, variant, surah_id, [
+            (row[3], row[4], row[5], row[6]) for row in rows
+        ]
 
 
 def _licenses_document(
@@ -286,13 +389,193 @@ def _licenses_document(
     }
 
 
-def _write_web_payloads(
+def _write_catalogue_payloads(write_payload: Callable[..., None], tables: dict[str, list[tuple]]) -> None:
+    """The whole-table files both layouts share."""
+    write_payload(
+        "audio-files.json",
+        "audio_files",
+        _table(AUDIO_FILE_COLUMNS, tables["audio_files"]),
+        rows=len(tables["audio_files"]),
+    )
+    write_payload(
+        "translations.json",
+        "translations",
+        _table(EDITION_COLUMNS, tables["translations"]),
+        rows=len(tables["translations"]),
+    )
+    write_payload(
+        "transliterations.json",
+        "transliterations",
+        _table(EDITION_COLUMNS, tables["transliterations"]),
+        rows=len(tables["transliterations"]),
+    )
+
+
+def _write_notice(work_dir: Path, notice_path: Path) -> dict[str, Any]:
+    data = notice_path.read_bytes()
+    (work_dir / TANZIL_NOTICE_FILENAME).write_bytes(data)
+    return {
+        "path": TANZIL_NOTICE_FILENAME,
+        "kind": "notice",
+        "sha256": sha256_digest(data),
+        "bytes": len(data),
+    }
+
+
+def _build_index(
+    manifest: dict[str, Any],
+    meta: dict[str, str],
+    counts: dict[str, int],
+    files: dict[str, dict[str, Any]],
+    schema_path: Path,
+    *,
+    web_bundle_version: int,
+    layout: str,
+    inline: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Assemble the index and digest the payload it describes.
+
+    ``bundle_digest`` covers the inventory plus any inline tables, so a client
+    can use it as the re-import identity for the whole exported bundle.
+    """
+    file_list = [files[path] for path in sorted(files)]
+    index: dict[str, Any] = {
+        "web_bundle_version": web_bundle_version,
+        "layout": layout,
+        "generated_by": manifest.get("generated_by", {}),
+        "content_mode": meta.get("content_mode", (manifest.get("content_policy") or {}).get("mode")),
+        "schema_version": int(meta.get("schema_version", 0)),
+        "schema_sha256": sha256_digest(schema_path.read_bytes()),
+        "logical_digest": meta.get("logical_digest"),
+        "database": manifest["bundle"]["database"],
+        "counts": counts,
+        "meta": meta,
+        "distribution_policy": manifest.get("distribution_policy", {}),
+        "licenses_file": "licenses.json",
+        "files": file_list,
+    }
+    if inline:
+        index.update(inline)
+    index["bundle_digest"] = digest_json(index)
+    return index
+
+
+def _write_grouped_payloads(
     work_dir: Path,
     database_path: Path,
     manifest: dict[str, Any],
     schema_path: Path,
     notice_path: Path,
 ) -> tuple[dict[str, dict[str, Any]], dict[str, int], dict[str, Any]]:
+    files: dict[str, dict[str, Any]] = {}
+
+    def write_payload(relative_path: str, kind: str, value: Any, *, rows: int | None = None, **extra: Any) -> None:
+        if relative_path in files:
+            raise PipelineError(f"web bundle would contain two files named {relative_path}")
+        target = work_dir / relative_path
+        target.parent.mkdir(parents=True, exist_ok=True)
+        data = compact_json_bytes(value)
+        target.write_bytes(data)
+        entry: dict[str, Any] = {
+            "path": relative_path,
+            "kind": kind,
+            "sha256": sha256_digest(data),
+            "bytes": len(data),
+        }
+        if rows is not None:
+            entry["rows"] = rows
+        entry.update(extra)
+        files[relative_path] = entry
+
+    connection = _open_readonly(database_path)
+    try:
+        tables = _read_small_tables(connection)
+        transliteration_id = _primary_transliteration_id(connection)
+        counts = _table_counts(connection)
+
+        _write_catalogue_payloads(write_payload, tables)
+
+        for row in tables["surahs"]:
+            surah_id = row[0]
+            ayah_rows = _read_ayahs(connection, transliteration_id, surah_id=surah_id)
+            word_rows = _read_words(connection, surah_id=surah_id)
+            transliteration_rows = _read_transliteration_rows(
+                connection, transliteration_id, surah_id=surah_id
+            )
+            write_payload(
+                f"{SURAHS_DIRNAME}/{surah_id}.json",
+                "surah",
+                {
+                    "surah_id": surah_id,
+                    "ayahs": _table(AYAH_COLUMNS, ayah_rows),
+                    "transliteration_rows": _table(
+                        TRANSLITERATION_ROW_COLUMNS, transliteration_rows
+                    ),
+                    "words": _table(WORD_COLUMNS, word_rows),
+                },
+                surah_id=surah_id,
+                ayahs=len(ayah_rows),
+                words=len(word_rows),
+                transliteration_rows=len(transliteration_rows),
+            )
+
+        for reciter_id, variant, surah_id, rows in _grouped_segment_batches(connection):
+            write_payload(
+                f"{SEGMENTS_DIRNAME}/{reciter_id}/{surah_id}.json",
+                "segments",
+                {
+                    "reciter_id": reciter_id,
+                    "variant": variant,
+                    "surah_id": surah_id,
+                    "columns": list(SEGMENT_COLUMNS),
+                    "rows": [list(row) for row in rows],
+                },
+                rows=len(rows),
+                reciter_id=reciter_id,
+                surah_id=surah_id,
+                variant=variant,
+            )
+    finally:
+        connection.close()
+
+    notice_entry = _write_notice(work_dir, notice_path)
+    files[TANZIL_NOTICE_FILENAME] = notice_entry
+
+    licenses = _licenses_document(manifest, tables, notice_entry)
+    write_payload(
+        "licenses.json",
+        "licenses",
+        licenses,
+        rows=len(licenses["attributions"]),
+        license_count=len(licenses["licenses"]),
+    )
+
+    meta = {key: value for key, value in tables["content_meta"]}
+    index = _build_index(
+        manifest,
+        meta,
+        counts,
+        files,
+        schema_path,
+        web_bundle_version=WEB_BUNDLE_VERSION,
+        layout=LAYOUT_GROUPED,
+        inline={
+            "surahs": _table(SURAH_COLUMNS, tables["surahs"]),
+            "reciters": _table(RECITER_COLUMNS, tables["reciters"]),
+        },
+    )
+    (work_dir / "index.json").write_bytes(compact_json_bytes(index))
+    return files, counts, index
+
+
+def _write_single_payloads(
+    work_dir: Path,
+    database_path: Path,
+    manifest: dict[str, Any],
+    schema_path: Path,
+    notice_path: Path,
+) -> tuple[dict[str, dict[str, Any]], dict[str, int], dict[str, Any]]:
+    """The original table-per-file layout, kept for older consumers."""
     files: dict[str, dict[str, Any]] = {}
 
     def write_payload(relative_path: str, kind: str, value: Any, *, rows: int | None = None, **extra: Any) -> None:
@@ -313,7 +596,11 @@ def _write_web_payloads(
 
     connection = _open_readonly(database_path)
     try:
-        tables = _read_tables(connection)
+        tables = _read_small_tables(connection)
+        transliteration_id = _primary_transliteration_id(connection)
+        tables["ayahs"] = _read_ayahs(connection, transliteration_id)
+        tables["words"] = _read_words(connection)
+        counts = _table_counts(connection)
 
         write_payload("surahs.json", "surahs", _table(SURAH_COLUMNS, tables["surahs"]), rows=len(tables["surahs"]))
         write_payload("ayahs.json", "ayahs", _table(AYAH_COLUMNS, tables["ayahs"]), rows=len(tables["ayahs"]))
@@ -321,28 +608,9 @@ def _write_web_payloads(
         write_payload(
             "reciters.json", "reciters", _table(RECITER_COLUMNS, tables["reciters"]), rows=len(tables["reciters"])
         )
-        write_payload(
-            "audio-files.json",
-            "audio_files",
-            _table(AUDIO_FILE_COLUMNS, tables["audio_files"]),
-            rows=len(tables["audio_files"]),
-        )
-        write_payload(
-            "translations.json",
-            "translations",
-            _table(EDITION_COLUMNS, tables["translations"]),
-            rows=len(tables["translations"]),
-        )
-        write_payload(
-            "transliterations.json",
-            "transliterations",
-            _table(EDITION_COLUMNS, tables["transliterations"]),
-            rows=len(tables["transliterations"]),
-        )
+        _write_catalogue_payloads(write_payload, tables)
 
-        segment_count = 0
         for reciter_id, variant, rows in _segment_batches(connection):
-            segment_count += len(rows)
             write_payload(
                 f"{SEGMENTS_DIRNAME}/{reciter_id}.json",
                 "segments",
@@ -359,14 +627,7 @@ def _write_web_payloads(
     finally:
         connection.close()
 
-    notice_data = notice_path.read_bytes()
-    (work_dir / TANZIL_NOTICE_FILENAME).write_bytes(notice_data)
-    notice_entry = {
-        "path": TANZIL_NOTICE_FILENAME,
-        "kind": "notice",
-        "sha256": sha256_digest(notice_data),
-        "bytes": len(notice_data),
-    }
+    notice_entry = _write_notice(work_dir, notice_path)
     files[TANZIL_NOTICE_FILENAME] = notice_entry
 
     licenses = _licenses_document(manifest, tables, notice_entry)
@@ -379,32 +640,15 @@ def _write_web_payloads(
     )
 
     meta = {key: value for key, value in tables["content_meta"]}
-    counts = {
-        "surahs": len(tables["surahs"]),
-        "ayahs": len(tables["ayahs"]),
-        "words": len(tables["words"]),
-        "reciters": len(tables["reciters"]),
-        "audio_files": len(tables["audio_files"]),
-        "segments": segment_count,
-        "translations": len(tables["translations"]),
-        "transliterations": len(tables["transliterations"]),
-    }
-    file_list = [files[path] for path in sorted(files)]
-    index = {
-        "web_bundle_version": WEB_BUNDLE_VERSION,
-        "generated_by": manifest.get("generated_by", {}),
-        "content_mode": meta.get("content_mode", (manifest.get("content_policy") or {}).get("mode")),
-        "schema_version": int(meta.get("schema_version", 0)),
-        "schema_sha256": sha256_digest(schema_path.read_bytes()),
-        "logical_digest": meta.get("logical_digest"),
-        "database": manifest["bundle"]["database"],
-        "counts": counts,
-        "meta": meta,
-        "distribution_policy": manifest.get("distribution_policy", {}),
-        "licenses_file": "licenses.json",
-        "files": file_list,
-        "bundle_digest": digest_json(file_list),
-    }
+    index = _build_index(
+        manifest,
+        meta,
+        counts,
+        files,
+        schema_path,
+        web_bundle_version=SINGLE_WEB_BUNDLE_VERSION,
+        layout=LAYOUT_SINGLE,
+    )
     (work_dir / "index.json").write_bytes(compact_json_bytes(index))
     return files, counts, index
 
@@ -414,8 +658,17 @@ def export_web(
     *,
     web_dir: Path | None = None,
     schema_path: Path = CONTENT_SCHEMA_PATH,
+    layout: str = DEFAULT_LAYOUT,
 ) -> WebExportResult:
-    """Write ``build_dir/web`` (or ``web_dir``) from the built content bundle."""
+    """Write ``build_dir/web`` (or ``web_dir``) from the built content bundle.
+
+    ``layout="grouped"`` (default) writes the lazy index/surahs/segments
+    layout; ``layout="single"`` writes the legacy table-per-file payload.
+    """
+    if layout not in LAYOUTS:
+        raise PipelineError(
+            f"unknown web layout {layout!r}; expected one of {', '.join(LAYOUTS)}"
+        )
     build_dir = Path(build_dir)
     web_dir = Path(web_dir) if web_dir else build_dir / "web"
 
@@ -443,7 +696,8 @@ def export_web(
 
     work_dir = _prepare_workdir(web_dir)
     try:
-        files, counts, index = _write_web_payloads(
+        writer = _write_grouped_payloads if layout == LAYOUT_GROUPED else _write_single_payloads
+        files, counts, index = writer(
             work_dir, database_path, manifest, schema_path, notice_path
         )
         _commit_workdir(work_dir, web_dir)
@@ -454,6 +708,7 @@ def export_web(
     return WebExportResult(
         web_dir=web_dir,
         index_path=web_dir / "index.json",
+        layout=layout,
         files=files,
         counts=counts,
         index=index,
