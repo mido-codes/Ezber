@@ -25,7 +25,9 @@ cd android
 Or open the `android/` directory in Android Studio and run the `app`
 configuration. The project is a single `:app` module; new Kotlin files under
 `app/src/main/java/` are picked up automatically. The unit tests cover the
-grouped content-bundle parsers and the lazy fetch/cache engine.
+grouped content-bundle parsers and the lazy fetch/cache engine; when
+`content-pipeline/build/web/` exists (from `make web`) an integration test also
+runs the engine against the real pipeline output and is skipped otherwise.
 
 ## Content source
 
