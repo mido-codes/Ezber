@@ -4,7 +4,8 @@ A native SwiftUI skeleton for the Ezber iPhone app, built from the product brief
 [`../README.md`](../README.md). It is a click-through scaffold: every main screen
 exists and navigates, backed by placeholder data. The study player runs on a real
 AVFoundation drill engine with background audio and lock-screen controls; the
-other screens still use stub services. No CarPlay in this slice.
+CarPlay audio scene is in place against the shared audio service (see
+[`CARPLAY.md`](CARPLAY.md)); the other screens still use stub services.
 
 ## Requirements
 
@@ -32,6 +33,7 @@ editing the Xcode project; the synchronized group picks them up.
 | `Ezber/Models/` | Preset, drill queue (verse × repetition), progress, notes, reciter, surah/verse |
 | `Ezber/Persistence/` | SQLite wrapper, schema, content store, user data store, in-memory fallbacks |
 | `Ezber/Services/` | Audio session, drill session, voice memo protocols + stubs |
+| `Ezber/CarPlay/` | CarPlay audio scene, preset list, now-playing metadata and controls |
 | `Ezber/Placeholder/` | Placeholder surahs, verses, presets, progress, notes |
 | `Ezber/Features/` | One folder per screen |
 | `Ezber/Resources/` | Asset catalog, String Catalog (English source, Turkish translations) and bundled OFL fonts |
@@ -40,7 +42,8 @@ editing the Xcode project; the synchronized group picks them up.
 
 Home/Continue · Surah and section picker · Preset builder · Preset library ·
 Study player · Reciter picker · Progress overview · Verse progress detail ·
-Notes · Settings · Credits and licenses.
+Notes · Settings · Credits and licenses · CarPlay preset list and now-playing
+verse surface (see [`CARPLAY.md`](CARPLAY.md)).
 
 The study player is driven by `DrillSessionService`: a drill is a queue of
 `DrillItem` values (one per verse × repetition), and progress/resume points are
@@ -84,6 +87,7 @@ When it lands, replace the DDL and row mapping there.
 - Voice memos: `StubVoiceMemoService` records nothing; notes can be marked as
   voice memos with transcription pending.
 - Downloads/storage management, export, and per-surah reciter availability.
-- CarPlay (out of scope for this slice).
+- CarPlay is in place: metadata, controls and the preset list are documented in
+  [`CARPLAY.md`](CARPLAY.md), wired to the shared audio service.
 - Credits attributions are provisional; the authoritative license registry is
   owned by the rights work under `licenses/`.
