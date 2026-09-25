@@ -92,20 +92,23 @@ alignment), `normalize.py`, `validate.py`, `package.py`, `webexport.py`
 app can seed IndexedDB without parsing SQLite. It reads the same canonical
 artifacts (`ezber-content.sqlite`, `content-manifest.json`, `TANZIL-NOTICE.txt`)
 and the license registry, verifies the database against the manifest first, and
-never modifies the SQLite bundle or the manifests:
+never modifies the SQLite bundle or the manifests. The default `grouped` layout
+is built for lazy loading: the app boots from a small `index.json` and fetches a
+surah, or one reciter's timings for a surah, on demand.
 
 | File | Contents |
 |---|---|
-| `index.json` | version, counts, `content_meta`, licence pointer, `bundle_digest` and a sha256/size inventory of every other file |
-| `surahs.json` | `surahs` |
-| `ayahs.json` | `ayahs` plus the primary transliteration edition joined as `transliteration` |
-| `words.json` | `words` |
-| `reciters.json` | `reciters` |
+| `index.json` | version, `layout`, counts, `content_meta`, the surah list and reciter catalogue inline, the `database`/`logical_digest`/`bundle_digest` content digests, `licenses_file`, and a sha256/size inventory of every other file. Carries no verse text and no timings |
+| `surahs/<surah_id>.json` | one surah: its `ayahs` (primary transliteration edition joined as `transliteration`), the primary edition's `transliteration_rows` and its `words` |
+| `segments/<reciter_id>/<surah_id>.json` | `segments` for one reciter and surah, with `reciter_id`, `variant` and `surah_id` hoisted into the header |
 | `audio-files.json` | `audio_files` (url, checksum, bytes, bitrate, duration, kind, chapter/ayah); build-time `local_path`/`downloaded_at` are omitted |
-| `segments/<reciter>.json` | `segments` for one reciter, with `reciter_id` and `variant` hoisted into the header |
 | `transliterations.json`, `translations.json` | edition tables (translations reserved and empty) |
 | `licenses.json` | the used `licenses/registry.json` entries, attribution strings and notice digests |
 | `TANZIL-NOTICE.txt` | the verbatim Tanzil copyright notice |
+
+`--layout single` (or `export_web(..., layout="single")`) still writes the
+original table-per-file payload (`surahs.json`, `ayahs.json`, `words.json`,
+`reciters.json`, `segments/<reciter_id>.json`, ...) for older consumers.
 
 Every JSON file is canonical compact UTF-8 (`sort_keys`, one trailing newline)
 and table files are `{"columns": [...], "rows": [[...]]}` in primary-key order.
@@ -118,6 +121,7 @@ exports over the same build are byte-identical.
 make web                                       # build + export in one command
 python3 -m ezber_pipeline export-web           # re-export an existing build
 python3 -m ezber_pipeline export-web --web-dir path/to/web   # custom destination
+python3 -m ezber_pipeline export-web --layout single         # legacy table files
 ```
 
 `build/web/` is gitignored: like the SQLite bundle it is a reproducible derived

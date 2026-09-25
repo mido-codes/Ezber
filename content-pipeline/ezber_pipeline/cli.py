@@ -17,7 +17,7 @@ from .lockfile import LockBook
 from .normalize import build_bundle
 from .package import write_artifacts
 from .validate import ensure_valid
-from .webexport import export_web
+from .webexport import DEFAULT_LAYOUT, LAYOUTS, export_web
 
 LOCK_FILENAME = "source-lock.json"
 
@@ -141,8 +141,9 @@ def _verify(args: argparse.Namespace) -> int:
 def _export_web(args: argparse.Namespace) -> int:
     output_dir = Path(args.output_dir) if args.output_dir else DEFAULT_OUTPUT_DIR
     web_dir = Path(args.web_dir) if args.web_dir else None
-    result = export_web(output_dir, web_dir=web_dir)
+    result = export_web(output_dir, web_dir=web_dir, layout=args.layout)
     print(f"web bundle:    {result.web_dir}")
+    print(f"layout:        {result.layout}")
     print(f"index:         {result.index_path}")
     print(
         "counts:        "
@@ -237,6 +238,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     export.add_argument("--output-dir", help="build directory holding the SQLite bundle and manifests")
     export.add_argument("--web-dir", help="destination directory (default: <output-dir>/web)")
+    export.add_argument(
+        "--layout",
+        choices=list(LAYOUTS),
+        default=DEFAULT_LAYOUT,
+        help="grouped (default) writes index.json plus per-surah/per-reciter files; "
+        "single writes the legacy table-per-file payload",
+    )
     export.set_defaults(func=_export_web)
 
     show = subparsers.add_parser("show-config", help="print the resolved configuration without secrets")

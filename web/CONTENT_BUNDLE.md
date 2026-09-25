@@ -1,58 +1,114 @@
 # Ezber content web bundle contract
 
-The content pipeline (task `ezber-content-web-export`) writes a deterministic
-web bundle under `content-pipeline/build/web/`. The web app loads it from
-`/content/` and imports it into IndexedDB. This file is the contract between the
-two lanes; the loader in `web/lib/content/bundle.ts` is deliberately tolerant of
-field aliases, but the shapes below are what the app expects.
+The content pipeline writes a deterministic web bundle under
+`content-pipeline/build/web/`. The web app loads it from `/content/` and imports
+it into IndexedDB. This file is the contract between the two lanes: the grouped
+layout below is the exact shape the pipeline emits today and what the app codes
+against.
 
-## Discovery
+## Grouped layout (current export)
 
-The loader probes, in order:
+`layout: "grouped"`, `web_bundle_version: 2`. The app boots from
+`/content/index.json` and fetches a surah file, or one reciter's timings for a
+surah, only when it is opened. The legacy single-bundle export
+(`--layout single`) is documented at the end.
 
-1. `/content/index.json`
-2. `/content/manifest.json`
-3. `/content/bundle.json`
+### `/content/index.json`
 
-An `index.json`/`manifest.json` points at per-table files; a `bundle.json` may
-instead embed the tables as arrays. Either works.
-
-## Manifest
+Small on purpose: no verse text and no timings, so it can be fetched eagerly.
 
 ```json
 {
-  "schema": "ezber-content-web/1",
-  "schema_version": 1,
-  "pipeline_version": "0.3.0",
+  "web_bundle_version": 2,
+  "layout": "grouped",
+  "generated_by": { "…": "…" },
   "content_mode": "offline-redistributable",
-  "bundle_id": "sha256:…",
-  "counts": { "surahs": 114, "ayahs": 6236, "words": 51176, "reciters": 11, "segments": 51176 },
-  "files": {
-    "surahs": "surahs.json",
-    "ayahs": ["ayahs/001.json", "ayahs/002.json"],
-    "words": "words.json",
-    "reciters": "reciters.json",
-    "audio_files": "audio-files.json",
-    "segments": ["segments/001.json"],
-    "transliterations": "transliterations.json",
-    "transliteration_rows": "transliteration-rows.json",
-    "licenses": "licenses.json"
-  },
-  "licenses": [
-    { "id": "tanzil-quran-text", "name": "Tanzil Uthmani 1.1", "url": "https://tanzil.net/", "attribution": "…" }
+  "schema_version": 1,
+  "schema_sha256": "sha256:…",
+  "logical_digest": "sha256:…",
+  "database": { "file": "ezber-content.sqlite", "sha256": "sha256:…", "bytes": 123, "logical_digest": "sha256:…" },
+  "counts": { "surahs": 114, "ayahs": 6236, "words": 51176, "reciters": 11, "audio_files": 1254, "segments": 925000, "translations": 0, "transliterations": 1 },
+  "meta": { "…": "…" },
+  "distribution_policy": { "…": "…" },
+  "licenses_file": "licenses.json",
+  "surahs": { "columns": ["id", "name_arabic", "name_latin", "name_english", "verses_count", "revelation", "bismillah_pre", "revelation_order", "rukus"], "rows": [[1, "الفاتحة", "Al-Faatiha", "The Opening", 7, "Meccan", 1, 5, 1]] },
+  "reciters": { "columns": ["id", "remote_id", "name", "style", "qirat", "source", "license_id", "license_url", "license_evidence_url", "attribution", "has_segments", "enabled"], "rows": [[1, "…", "…", "Murattal", "Hafs 'an Asim", "internet_archive", "…", "…", "…", "…", 1, 1]] },
+  "files": [
+    { "path": "surahs/1.json", "kind": "surah", "sha256": "sha256:…", "bytes": 12345, "surah_id": 1, "ayahs": 7, "words": 29, "transliteration_rows": 7 },
+    { "path": "segments/1/1.json", "kind": "segments", "sha256": "sha256:…", "bytes": 678, "rows": 29, "reciter_id": 1, "surah_id": 1, "variant": "murattal" },
+    { "path": "audio-files.json", "kind": "audio_files", "sha256": "sha256:…", "bytes": 40000, "rows": 1254 },
+    { "path": "licenses.json", "kind": "licenses", "sha256": "sha256:…", "bytes": 5000, "rows": 12, "license_count": 4 },
+    { "path": "TANZIL-NOTICE.txt", "kind": "notice", "sha256": "sha256:…", "bytes": 400 }
   ],
-  "attribution": ["Quran text from the Tanzil Project.", "…"]
+  "bundle_digest": "sha256:…"
 }
 ```
 
-- `bundle_id` must change whenever any file changes; the app re-imports only on
-  a new id. Keep it content-derived (e.g. a digest), not a timestamp.
-- `generated_at` and other volatile fields are ignored; omit them if you can, so
-  two identical builds compare byte-identical.
-- `counts` is displayed on the settings screen, so include at least
-  `surahs`, `ayahs`, `reciters`, `segments`, `audio_files`.
-- Each `files` entry may be a string, an array of strings, or an object with a
-  `path`/`paths` field.
+- `bundle_digest` is the re-import identity: it digests the index payload
+  (counts, inline tables and the file inventory), so it changes whenever any
+  emitted data changes. `logical_digest` is the canonical content database
+  digest and identifies the same corpus on every platform.
+- `surahs` and `reciters` are `{"columns", "rows"}` table documents inlined so
+  the boot request carries the surah list and the reciter catalogue.
+- `files` is a flat, path-sorted inventory of every other file with its
+  `sha256` and byte size, so a lazy fetch can be verified. `kind` is `surah`,
+  `segments`, `audio_files`, `translations`, `transliterations`, `licenses` or
+  `notice`; surah entries add `surah_id`, `ayahs`, `words` and
+  `transliteration_rows` counts, segment entries add `reciter_id`, `surah_id`,
+  `variant` and a row count.
+
+### `/content/surahs/<surah_id>.json`
+
+One file per surah (plain integer ids: `surahs/1.json` … `surahs/114.json`),
+fetched when the surah is opened.
+
+```json
+{
+  "surah_id": 55,
+  "ayahs": { "columns": ["id", "surah_id", "ayah", "verse_key", "text_uthmani", "transliteration", "juz", "hizb", "page", "sajdah", "sajdah_type"], "rows": [[...]] },
+  "transliteration_rows": { "columns": ["transliteration_id", "ayah_id", "text"], "rows": [[1, 4904, "…"]] },
+  "words": { "columns": ["id", "ayah_id", "position", "text_uthmani", "transliteration", "translation"], "rows": [[...]] }
+}
+```
+
+- `ayahs` covers only that surah. The primary transliteration edition is
+  already joined as `transliteration`; `transliteration_rows` carries the same
+  edition's rows for consumers that join by `ayah_id` instead.
+- `words` covers only that surah's ayahs. `text_uthmani` is NULL when the token
+  count did not match the Uthmani word count, mirroring the pipeline rule.
+
+### `/content/segments/<reciter_id>/<surah_id>.json`
+
+One file per reciter and surah, fetched when that recitation is selected.
+
+```json
+{
+  "reciter_id": 1,
+  "variant": "murattal",
+  "surah_id": 55,
+  "columns": ["ayah_id", "word_index", "start_ms", "end_ms"],
+  "rows": [[4904, 0, 0, 4210], [4904, 1, 0, 900]]
+}
+```
+
+`word_index = 0` is the whole-ayah range; `>= 1` maps to `words.position` and
+drives the active-word highlight. Times are offsets inside that ayah's audio
+file, not a chapter file. A reciter/surah pair with no timing rows has no file.
+
+### Other files
+
+`audio-files.json`, `translations.json`, `transliterations.json`,
+`licenses.json` and `TANZIL-NOTICE.txt` are whole-bundle files, listed in
+`index.json.files`, and fetched only when needed. Their table shapes are below.
+
+## Legacy single-bundle layout (`layout: "single"`)
+
+`python3 -m ezber_pipeline export-web --layout single` writes the original
+table-per-file payload: `index.json` (version 1) plus `surahs.json`,
+`ayahs.json`, `words.json`, `reciters.json`, `audio-files.json`,
+`segments/<reciter_id>.json`, `translations.json`, `transliterations.json`,
+`licenses.json` and `TANZIL-NOTICE.txt`. The table descriptions below still
+apply to it; the grouped layout above is what the app loads.
 
 ## Tables
 
@@ -149,9 +205,10 @@ Rows may also use `surah_id` + `ayah` (or `verse_number`) instead of `ayah_id`.
 
 ## Loader behaviour
 
-- The app probes `/content/` once per start. When a bundle is found with a new
-  `bundle_id` it clears the content tables and imports everything; when the id is
-  unchanged nothing is rewritten.
+- The app probes `/content/index.json` once per start. When `bundle_digest` (or
+  `logical_digest`) differs from the imported copy it clears the content tables
+  and imports the boot catalogue; surah and segment files are fetched and
+  cached on demand. When the id is unchanged nothing is rewritten.
 - Offline (or on a 404) the previously imported content stays; first run falls
   back to `web/lib/content/placeholder.ts`.
 - Settings → Content re-probes and re-imports on demand.

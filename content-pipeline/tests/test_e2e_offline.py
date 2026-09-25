@@ -16,7 +16,7 @@ from ezber_pipeline.lockfile import LockBook
 from ezber_pipeline.normalize import build_bundle
 from ezber_pipeline.package import write_artifacts
 from ezber_pipeline.validate import ensure_valid
-from ezber_pipeline.webexport import export_web
+from ezber_pipeline.webexport import LAYOUT_GROUPED, WEB_BUNDLE_VERSION, export_web
 from tests import helpers
 
 RECITER_SPECS = [
@@ -146,8 +146,64 @@ class OfflineBuildTests(unittest.TestCase):
         self.assertEqual(index["counts"], first_web.counts)
         self.assertEqual(index["logical_digest"], first.logical_digest)
         self.assertEqual(index["database"], first.manifest["bundle"]["database"])
-        segment_reciters = {entry["reciter_id"] for entry in index["files"] if entry["kind"] == "segments"}
-        self.assertEqual(segment_reciters, {reciter.id for reciter in bundle.reciters})
+        self.assertEqual(first_web.layout, LAYOUT_GROUPED)
+        self.assertEqual(index["layout"], LAYOUT_GROUPED)
+        self.assertEqual(index["web_bundle_version"], WEB_BUNDLE_VERSION)
+
+        # Boot data stays small: no verse text, no timings, only the inline
+        # surah/reciter catalogues, so the index is a fraction of the payload.
+        self.assertNotIn(b"text_uthmani", first_web_bytes["index.json"])
+        self.assertNotIn(b"start_ms", first_web_bytes["index.json"])
+        payload_bytes = sum(
+            len(data) for name, data in first_web_bytes.items() if name != "index.json"
+        )
+        self.assertLess(len(first_web_bytes["index.json"]), payload_bytes // 4)
+
+        # One surah file per surah, carrying only that surah's rows.
+        surah_entries = [entry for entry in index["files"] if entry["kind"] == "surah"]
+        self.assertEqual(len(surah_entries), len(bundle.surahs))
+        self.assertEqual(
+            {entry["path"] for entry in surah_entries},
+            {f"surahs/{surah.id}.json" for surah in bundle.surahs},
+        )
+        surah_one = json.loads(first_web_bytes["surahs/1.json"])
+        surah_one_ayah_ids = {row[0] for row in surah_one["ayahs"]["rows"]}
+        self.assertEqual(
+            surah_one_ayah_ids, {ayah.id for ayah in bundle.ayahs if ayah.surah_id == 1}
+        )
+        self.assertEqual({row[1] for row in surah_one["words"]["rows"]}, surah_one_ayah_ids)
+        self.assertEqual(
+            {row[1] for row in surah_one["transliteration_rows"]["rows"]},
+            surah_one_ayah_ids,
+        )
+
+        # One segment file per reciter and surah, carrying only that pair's rows.
+        segment_entries = [entry for entry in index["files"] if entry["kind"] == "segments"]
+        ayah_surah = {ayah.id: ayah.surah_id for ayah in bundle.ayahs}
+        expected_pairs = {
+            (segment.reciter_id, ayah_surah[segment.ayah_id]) for segment in bundle.segments
+        }
+        self.assertEqual(
+            {(entry["reciter_id"], entry["surah_id"]) for entry in segment_entries},
+            expected_pairs,
+        )
+        self.assertEqual(
+            {entry["path"] for entry in segment_entries},
+            {f"segments/{reciter_id}/{surah_id}.json" for reciter_id, surah_id in expected_pairs},
+        )
+        sample_segments = json.loads(first_web_bytes["segments/1/1.json"])
+        self.assertEqual(sample_segments["reciter_id"], 1)
+        self.assertEqual(sample_segments["surah_id"], 1)
+        expected_rows = sorted(
+            [
+                [segment.ayah_id, segment.word_index, segment.start_ms, segment.end_ms]
+                for segment in bundle.segments
+                if segment.reciter_id == 1 and ayah_surah[segment.ayah_id] == 1
+            ],
+            key=lambda row: (row[0], row[1]),
+        )
+        self.assertEqual(sample_segments["rows"], expected_rows)
+
         licenses = json.loads(first_web_bytes["licenses.json"])
         license_ids = {entry["id"] for entry in licenses["licenses"]}
         self.assertIn("cc-by-4.0-quran-align", license_ids)
