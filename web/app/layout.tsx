@@ -5,20 +5,21 @@ import { AppProvider } from '@/lib/app/app-context'
 import { AppChrome } from '@/components/layout/app-chrome'
 import { ServiceWorkerRegistrar } from '@/lib/pwa/service-worker-registrar'
 
-// Self-hosted fonts (OFL): copied from the iOS app's cleared resources so the
-// build never depends on a font CDN. Licence texts ship in public/licenses/.
+// Self-hosted fonts (OFL): copied from the iOS app's cleared resources and
+// converted losslessly to WOFF2 with fontTools (no subsetting — glyph coverage
+// is unchanged). Licence texts ship in public/licenses/.
 const sans = localFont({
   src: [
-    { path: '../fonts/PlusJakartaSans-Regular.ttf', weight: '400', style: 'normal' },
-    { path: '../fonts/PlusJakartaSans-Medium.ttf', weight: '500', style: 'normal' },
-    { path: '../fonts/PlusJakartaSans-SemiBold.ttf', weight: '600', style: 'normal' },
+    { path: '../fonts/PlusJakartaSans-Regular.woff2', weight: '400', style: 'normal' },
+    { path: '../fonts/PlusJakartaSans-Medium.woff2', weight: '500', style: 'normal' },
+    { path: '../fonts/PlusJakartaSans-SemiBold.woff2', weight: '600', style: 'normal' },
   ],
   variable: '--font-plus-jakarta-sans',
   display: 'swap',
 })
 
 const serif = localFont({
-  src: [{ path: '../fonts/SourceSerif4-Regular.ttf', weight: '400', style: 'normal' }],
+  src: [{ path: '../fonts/SourceSerif4-Regular.woff2', weight: '400', style: 'normal' }],
   variable: '--font-source-serif-4',
   display: 'swap',
 })

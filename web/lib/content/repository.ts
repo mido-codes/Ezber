@@ -253,11 +253,34 @@ export class ContentRepository {
     if (index) {
       this.index = index
       this.source = source
-      if (source === 'network') await this.writeIndexToCache(index)
+      if (source === 'network') {
+        // F12: skip the catalogue rewrite when nothing changed; F11: a new
+        // bundle invalidates every cached reading and timing set.
+        const previousBundle = await this.cachedBundleId()
+        if (previousBundle !== index.bundle_id) {
+          if (previousBundle !== null) await this.purgeStaleContentCaches()
+          await this.writeIndexToCache(index)
+        }
+      }
     } else {
       this.index = null
       this.source = 'placeholder'
     }
+  }
+
+  private async cachedBundleId(): Promise<string | null> {
+    const row = await getRecord<ContentMetaRow>(this.db, 'content_meta', 'bundle_id')
+    if (!row) return null
+    const mode = await getRecord<ContentMetaRow>(this.db, 'content_meta', 'mode')
+    return mode?.value === 'bundle' ? row.value : null
+  }
+
+  /** F11: drop rows cached under an older bundle before importing a new one. */
+  private async purgeStaleContentCaches(): Promise<void> {
+    await this.clearContentCache()
+    await clearStore(this.db, 'licenses')
+    this.licensesMemory = null
+    this.attributionLines = null
   }
 
   private async fetchJson(

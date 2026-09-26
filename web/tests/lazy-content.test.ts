@@ -318,6 +318,63 @@ test('an unusable export is recorded, never silently replaced', async () => {
   malformed.close()
 })
 
+test('a changed bundle purges stale caches; an unchanged one skips the rewrite', async () => {
+  const first = await ContentRepository.open({
+    baseUrl: BASE,
+    fetchImpl: fixtureFetch().fetchImpl,
+    databaseName: 'lazy-purge',
+  })
+  await first.ayahs(1)
+  await first.segmentsForSurah(1, 1)
+  await first.licenses()
+  assert.equal((await first.cacheStats()).surahs.length, 1)
+  const firstCachedAt = await readMeta(first, 'index_cached_at')
+  first.close()
+
+  // Same bundle: cached surahs survive and the catalogue is not rewritten.
+  const same = await ContentRepository.open({
+    baseUrl: BASE,
+    fetchImpl: fixtureFetch().fetchImpl,
+    databaseName: 'lazy-purge',
+  })
+  assert.equal((await same.ayahs(1)).length, 7)
+  assert.equal((await same.cacheStats()).surahs.length, 1)
+  assert.equal(await readMeta(same, 'index_cached_at'), firstCachedAt)
+  same.close()
+
+  // Changed bundle: per-bundle rows and the cached licences are purged, then
+  // the new catalogue is written.
+  const changed = fixtureFetch(undefined, (pathname, body) => {
+    if (pathname.endsWith('/index.json')) {
+      return { ...(body as Record<string, unknown>), bundle_digest: 'fixture:purge-2' }
+    }
+    return body
+  })
+  const fresh = await ContentRepository.open({
+    baseUrl: BASE,
+    fetchImpl: changed.fetchImpl,
+    databaseName: 'lazy-purge',
+  })
+  assert.equal(fresh.summary().bundle_id, 'fixture:purge-2')
+  const freshStats = await fresh.cacheStats()
+  assert.equal(freshStats.surahs.length, 0)
+  assert.equal(freshStats.segment_sets.length, 0)
+  assert.equal(freshStats.ayah_rows, 0)
+  assert.equal(freshStats.segment_rows, 0)
+  assert.notEqual(await readMeta(fresh, 'index_cached_at'), firstCachedAt)
+  assert.ok((await fresh.licenses()).length >= 3)
+  fresh.close()
+})
+
+async function readMeta(content: ContentRepository, key: string): Promise<string | undefined> {
+  const db = (content as unknown as { db: IDBDatabase }).db
+  return new Promise((resolve, reject) => {
+    const request = db.transaction('content_meta', 'readonly').objectStore('content_meta').get(key)
+    request.onsuccess = () => resolve((request.result as { value?: string } | undefined)?.value)
+    request.onerror = () => reject(request.error)
+  })
+}
+
 test('exposes cache stats for the settings screen', async () => {
   const { fetchImpl } = fixtureFetch()
   const content = await ContentRepository.open({

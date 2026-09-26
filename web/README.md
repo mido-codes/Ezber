@@ -148,6 +148,8 @@ with refresh and clear actions.
 ## Fonts and licences
 
 Plus Jakarta Sans and Source Serif 4 (OFL) are self-hosted from
-`web/fonts/`; the licence texts ship in `public/licenses/`. The app's Credits
+`web/fonts/` as WOFF2, converted losslessly from the cleared iOS TTFs with
+fontTools and no subsetting (glyph coverage is unchanged); the licence texts
+ship in `public/licenses/`. The app's Credits
 screen lists the content licences (Tanzil text and transliteration grant,
 quran-align CC BY 4.0) and the bundle's own licence registry.
