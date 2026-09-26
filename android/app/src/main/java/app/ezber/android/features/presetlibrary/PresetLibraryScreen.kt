@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,7 +54,12 @@ import app.ezber.android.ui.ScreenScaffold
 /** Saved presets with one-tap play and rename / duplicate / edit / delete. */
 @Composable
 fun PresetLibraryScreen(app: AppEnvironment, navigator: Navigator) {
+    LaunchedEffect(app.contentRepository) {
+        app.contentRepository?.ensureIndex()
+    }
+
     val revision = app.dataRevision
+    val contentRevision = app.contentRepository?.state?.revision ?: 0
     val presets = remember(revision) { app.userData.allPresets() }
 
     var renameTarget by remember { mutableStateOf<Preset?>(null) }
@@ -80,9 +86,12 @@ fun PresetLibraryScreen(app: AppEnvironment, navigator: Navigator) {
                 items(presets, key = { it.id }) { preset ->
                     PresetRow(
                         preset = preset,
-                        surah = app.content.surah(preset.surahId ?: 0),
-                        reciterName = app.content.reciter(preset.reciterId)?.name
-                            ?: "No reciter",
+                        surah = remember(contentRevision, preset.surahId) {
+                            preset.surahId?.let { app.content.surah(it) }
+                        },
+                        reciterName = remember(contentRevision, preset.reciterId) {
+                            app.content.reciter(preset.reciterId)?.name ?: "No reciter"
+                        },
                         onPlay = {
                             app.userData.setLastPresetId(preset.id)
                             app.notifyDataChanged()

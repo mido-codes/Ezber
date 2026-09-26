@@ -13,12 +13,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,13 +28,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.ezber.android.AppEnvironment
 import app.ezber.android.R
+import app.ezber.android.features.presetbuilder.PresetBuilderRoute
+import app.ezber.android.models.Iso8601
 import app.ezber.android.models.MemorizationState
-import app.ezber.android.models.Surah
+import app.ezber.android.models.StudySession
 import app.ezber.android.models.VerseId
 import app.ezber.android.models.VerseRange
 import app.ezber.android.models.VerseSummary
 import app.ezber.android.models.summarizeByVerse
-import app.ezber.android.features.presetbuilder.PresetBuilderRoute
 import app.ezber.android.ui.EmptyState
 import app.ezber.android.ui.EzberCard
 import app.ezber.android.ui.Metric
@@ -42,20 +45,27 @@ import app.ezber.android.ui.ScreenScaffold
 import app.ezber.android.ui.StateBadge
 
 /**
- * Honest exposure: per-surah repetition counts, per-verse states, and a gentle
- * "what to drill next".
+ * Honest exposure: per-surah repetition counts, per-verse states, session
+ * history, and a gentle "what to drill next".
  */
 @Composable
 fun ProgressOverviewScreen(app: AppEnvironment, navigator: Navigator) {
+    LaunchedEffect(app.contentRepository) {
+        app.contentRepository?.ensureIndex()
+    }
+
     val revision = app.dataRevision
+    val contentRevision = app.contentRepository?.state?.revision ?: 0
     val summaries = remember(revision) { app.userData.allProgress().summarizeByVerse() }
-    val sections = remember(summaries) {
+    val sessions = remember(revision) { app.userData.recentSessions(8) }
+    val sections = remember(summaries, contentRevision) {
         summaries
             .groupBy { it.verseId.surah }
-            .mapNotNull { (surahId, entries) ->
-                app.content.surah(surahId)?.let { surah -> surah to entries }
+            .map { (surahId, entries) ->
+                val name = app.content.surah(surahId)?.nameLatin ?: "Surah $surahId"
+                Triple(surahId, name, entries)
             }
-            .sortedBy { it.first.id }
+            .sortedBy { it.first }
     }
     val nextUp = remember(summaries) {
         summaries.minWithOrNull(
@@ -94,14 +104,21 @@ fun ProgressOverviewScreen(app: AppEnvironment, navigator: Navigator) {
                     message = "Drill a section and your per-verse exposure will appear here.",
                 )
             } else {
-                for ((surah, entries) in sections) {
+                for ((_, name, entries) in sections) {
                     SurahProgressCard(
-                        surah = surah,
+                        surahName = name,
                         entries = entries,
                         onVerseClick = { verseId -> navigator.push(Screen.VerseProgressDetail(verseId)) },
                     )
                 }
             }
+
+            SessionsCard(
+                sessions = sessions,
+                presetName = { id ->
+                    id?.let { app.userData.preset(it)?.name } ?: "Deleted preset"
+                },
+            )
         }
     }
 }
@@ -152,7 +169,7 @@ private fun NextUpCard(summary: VerseSummary, onDrill: () -> Unit) {
 
 @Composable
 private fun SurahProgressCard(
-    surah: Surah,
+    surahName: String,
     entries: List<VerseSummary>,
     onVerseClick: (VerseId) -> Unit,
 ) {
@@ -160,7 +177,7 @@ private fun SurahProgressCard(
 
     EzberCard {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(surah.nameLatin, style = MaterialTheme.typography.titleMedium)
+            Text(surahName, style = MaterialTheme.typography.titleMedium)
             Spacer(Modifier.weight(1f))
             Text(
                 text = "$totalRepetitions repetitions",
@@ -190,6 +207,58 @@ private fun SurahProgressCard(
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionsCard(
+    sessions: List<StudySession>,
+    presetName: (Long?) -> String,
+) {
+    EzberCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Filled.History, contentDescription = null)
+            Spacer(Modifier.padding(horizontal = 4.dp))
+            Text("Recent sessions", style = MaterialTheme.typography.titleMedium)
+        }
+        if (sessions.isEmpty()) {
+            Text(
+                text = "Completed and interrupted drills are recorded here.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        for (session in sessions) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = presetName(session.presetId),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Text(
+                        text = Iso8601.display(session.startedAt),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${session.versesCovered} verses · ${session.repetitions}×",
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                    if (session.interrupted) {
+                        Text(
+                            text = "Interrupted",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
             }
         }
     }

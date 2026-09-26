@@ -41,6 +41,7 @@ import app.ezber.android.models.PlaybackMode
 import app.ezber.android.models.Preset
 import app.ezber.android.models.TranslationMode
 import app.ezber.android.models.TransliterationStyle
+import app.ezber.android.ui.ContentGate
 import app.ezber.android.ui.DropdownField
 import app.ezber.android.ui.EzberCard
 import app.ezber.android.ui.InfoRow
@@ -58,6 +59,25 @@ fun PresetBuilderScreen(
     route: PresetBuilderRoute,
     onSaved: (Preset) -> Unit,
     onBack: () -> Unit,
+) {
+    val isEditing = route is PresetBuilderRoute.Edit
+    ScreenScaffold(
+        title = stringResource(
+            if (isEditing) R.string.title_preset_builder_edit else R.string.title_preset_builder,
+        ),
+        onBack = onBack,
+    ) { padding ->
+        ContentGate(app = app, modifier = Modifier.padding(padding)) {
+            PresetBuilderForm(app = app, route = route, onSaved = onSaved)
+        }
+    }
+}
+
+@Composable
+private fun PresetBuilderForm(
+    app: AppEnvironment,
+    route: PresetBuilderRoute,
+    onSaved: (Preset) -> Unit,
 ) {
     val existingPreset = remember(route) {
         (route as? PresetBuilderRoute.Edit)?.let { app.userData.preset(it.presetId) }
@@ -84,202 +104,202 @@ fun PresetBuilderScreen(
         (1..verseCount).map { number -> "Verse $number" to number }
     }
 
-    ScreenScaffold(
-        title = stringResource(
-            if (isEditing) R.string.title_preset_builder_edit else R.string.title_preset_builder,
-        ),
-        onBack = onBack,
-    ) { padding ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-        ) {
-            item {
-                EzberCard {
-                    Text("Name", style = MaterialTheme.typography.titleMedium)
-                    OutlinedTextField(
-                        value = draft.name,
-                        onValueChange = { draft = draft.copy(name = it) },
-                        label = { Text("Preset name") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-
-            item {
-                EzberCard {
-                    Text("Surah and section", style = MaterialTheme.typography.titleMedium)
-                    DropdownField(
-                        label = "Surah",
-                        value = surah?.let { "${it.id}. ${it.nameLatin}" } ?: "Surah ${draft.surahId}",
-                        options = surahOptions.map { (label, id) ->
-                            label to { draft = draft.copy(surahId = id, overrides = emptyMap()) }
-                        },
-                    )
-                    DropdownField(
-                        label = "From",
-                        value = "Verse ${draft.range.start}",
-                        options = verseOptions.map { (label, number) ->
-                            label to {
-                                draft = draft.copy(
-                                    range = draft.range.copy(start = number),
-                                ).let { if (it.range.end < number) it.copy(range = it.range.copy(end = number)) else it }
-                            }
-                        },
-                    )
-                    DropdownField(
-                        label = "To",
-                        value = "Verse ${draft.range.end}",
-                        options = verseOptions.map { (label, number) ->
-                            label to {
-                                draft = draft.copy(
-                                    range = draft.range.copy(end = number),
-                                ).let { if (it.range.start > number) it.copy(range = it.range.copy(start = number)) else it }
-                            }
-                        },
-                    )
-                    InfoRow(title = "Section length", value = "${draft.range.count} verses")
-                    InfoRow(title = "Total repetitions", value = "${draft.repeats.totalRepetitions(draft.range)}")
-                }
-            }
-
-            item {
-                EzberCard {
-                    Text("Repeats", style = MaterialTheme.typography.titleMedium)
-                    StepperRow(
-                        label = "Default repeats",
-                        value = draft.defaultRepeats,
-                        range = 1..50,
-                        onValueChange = { draft = draft.copy(defaultRepeats = it, overrides = emptyMap()) },
-                    )
-                    if (draft.overrides.isNotEmpty()) {
-                        OutlinedButton(
-                            onClick = { draft = draft.copy(overrides = emptyMap()) },
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            Text("Reset per-verse overrides")
-                        }
-                    }
-                }
-            }
-
-            items(draft.verseNumbers, key = { it }) { number ->
-                Row(
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        item {
+            EzberCard {
+                Text("Name", style = MaterialTheme.typography.titleMedium)
+                OutlinedTextField(
+                    value = draft.name,
+                    onValueChange = { draft = draft.copy(name = it) },
+                    label = { Text("Preset name") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Verse $number")
-                        if (draft.overrides.containsKey(number)) {
-                            Text(
-                                text = "override",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = LocalEzberColors.current.primary,
-                            )
-                        }
-                    }
-                    StepperRow(
-                        label = "",
-                        value = draft.repeats.repeatsFor(number),
-                        range = 1..99,
-                        onValueChange = { draft = draft.updateRepeat(it, number) },
-                    )
-                    Text(
-                        text = "${draft.repeats.repeatsFor(number)}×",
-                        style = MaterialTheme.typography.bodyMedium,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.width(44.dp),
-                    )
-                }
+                )
             }
+        }
 
-            item {
-                EzberCard {
-                    Text("Reciter", style = MaterialTheme.typography.titleMedium)
+        item {
+            EzberCard {
+                Text("Surah and section", style = MaterialTheme.typography.titleMedium)
+                DropdownField(
+                    label = "Surah",
+                    value = surah?.let { "${it.id}. ${it.nameLatin}" } ?: "Surah ${draft.surahId}",
+                    options = surahOptions.map { (label, id) ->
+                        label to {
+                            draft = draft.copy(surahId = id, overrides = emptyMap())
+                        }
+                    },
+                )
+                DropdownField(
+                    label = "From",
+                    value = "Verse ${draft.range.start}",
+                    options = verseOptions.map { (label, number) ->
+                        label to {
+                            draft = draft.copy(
+                                range = draft.range.copy(start = number),
+                            ).let { if (it.range.end < number) it.copy(range = it.range.copy(end = number)) else it }
+                        }
+                    },
+                )
+                DropdownField(
+                    label = "To",
+                    value = "Verse ${draft.range.end}",
+                    options = verseOptions.map { (label, number) ->
+                        label to {
+                            draft = draft.copy(
+                                range = draft.range.copy(end = number),
+                            ).let { if (it.range.start > number) it.copy(range = it.range.copy(start = number)) else it }
+                        }
+                    },
+                )
+                InfoRow(title = "Section length", value = "${draft.range.count} verses")
+                InfoRow(title = "Total repetitions", value = "${draft.repeats.totalRepetitions(draft.range)}")
+            }
+        }
+
+        item {
+            EzberCard {
+                Text("Repeats", style = MaterialTheme.typography.titleMedium)
+                StepperRow(
+                    label = "Default repeats",
+                    value = draft.defaultRepeats,
+                    range = 1..50,
+                    onValueChange = { draft = draft.copy(defaultRepeats = it, overrides = emptyMap()) },
+                )
+                if (draft.overrides.isNotEmpty()) {
                     OutlinedButton(
-                        onClick = { showReciterDialog = true },
+                        onClick = { draft = draft.copy(overrides = emptyMap()) },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        Text(app.content.reciter(draft.reciterId)?.name ?: "Choose a reciter")
+                        Text("Reset per-verse overrides")
                     }
                 }
             }
+        }
 
-            item {
-                EzberCard {
-                    Text("Display", style = MaterialTheme.typography.titleMedium)
-                    SwitchRow(
-                        label = "Transliteration",
-                        checked = draft.showTransliteration,
-                        onCheckedChange = { draft = draft.copy(showTransliteration = it) },
-                    )
-                    SwitchRow(
-                        label = "Arabic script",
-                        checked = draft.showArabic,
-                        onCheckedChange = { draft = draft.copy(showArabic = it) },
-                    )
-                    SwitchRow(
-                        label = "Translation shown",
-                        checked = draft.showTranslation,
-                        onCheckedChange = { draft = draft.copy(showTranslation = it) },
-                    )
-                    DropdownField(
-                        label = "Translation mode",
-                        value = draft.translationMode.label,
-                        options = TranslationMode.entries.map { mode ->
-                            mode.label to { draft = draft.copy(translationMode = mode) }
-                        },
-                    )
-                    DropdownField(
-                        label = "Transliteration style",
-                        value = draft.transliterationStyle.label,
-                        options = TransliterationStyle.entries.map { style ->
-                            style.label to { draft = draft.copy(transliterationStyle = style) }
-                        },
-                    )
-                    DropdownField(
-                        label = "Playback",
-                        value = draft.playbackMode.label,
-                        options = PlaybackMode.entries.map { mode ->
-                            mode.label to { draft = draft.copy(playbackMode = mode) }
-                        },
-                    )
-                    DropdownField(
-                        label = "Downloads",
-                        value = draft.downloadScope.label,
-                        options = DownloadScope.entries.map { scope ->
-                            scope.label to { draft = draft.copy(downloadScope = scope) }
-                        },
-                    )
-                    PauseSliderRow(
-                        pauseMs = draft.pauseBetweenRepeatsMs,
-                        onValueChange = { draft = draft.copy(pauseBetweenRepeatsMs = it) },
-                    )
-                    SwitchRow(
-                        label = "Loop until stopped",
-                        checked = draft.loopUntilStopped,
-                        onCheckedChange = { draft = draft.copy(loopUntilStopped = it) },
-                    )
+        items(draft.verseNumbers, key = { it }) { number ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("Verse $number")
+                    if (draft.overrides.containsKey(number)) {
+                        Text(
+                            text = "override",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = LocalEzberColors.current.primary,
+                        )
+                    }
                 }
+                StepperRow(
+                    label = "",
+                    value = draft.repeats.repeatsFor(number),
+                    range = 1..99,
+                    onValueChange = { draft = draft.updateRepeat(it, number) },
+                )
+                Text(
+                    text = "${draft.repeats.repeatsFor(number)}×",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.width(44.dp),
+                )
             }
+        }
 
-            item {
-                Button(
-                    onClick = {
-                        val currentSurah = surah ?: return@Button
-                        val preset = draft.makePreset(existingPreset, currentSurah)
-                        val id = app.userData.savePreset(preset)
-                        app.userData.setLastPresetId(id)
-                        app.notifyDataChanged()
-                        onSaved(preset.copy(id = id))
-                    },
-                    enabled = surah != null,
+        item {
+            EzberCard {
+                Text("Reciter", style = MaterialTheme.typography.titleMedium)
+                OutlinedButton(
+                    onClick = { showReciterDialog = true },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text(if (isEditing) "Save changes" else "Save preset")
+                    Text(app.content.reciter(draft.reciterId)?.name ?: "Choose a reciter")
                 }
+                Text(
+                    text = "Audio rights: only reciters the pipeline ships stay selectable here.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        item {
+            EzberCard {
+                Text("Display", style = MaterialTheme.typography.titleMedium)
+                SwitchRow(
+                    label = "Transliteration",
+                    checked = draft.showTransliteration,
+                    onCheckedChange = { draft = draft.copy(showTransliteration = it) },
+                )
+                SwitchRow(
+                    label = "Arabic script",
+                    checked = draft.showArabic,
+                    onCheckedChange = { draft = draft.copy(showArabic = it) },
+                )
+                SwitchRow(
+                    label = "Translation shown",
+                    checked = draft.showTranslation,
+                    onCheckedChange = { draft = draft.copy(showTranslation = it) },
+                )
+                DropdownField(
+                    label = "Translation mode",
+                    value = draft.translationMode.label,
+                    options = TranslationMode.entries.map { mode ->
+                        mode.label to { draft = draft.copy(translationMode = mode) }
+                    },
+                )
+                DropdownField(
+                    label = "Transliteration style",
+                    value = draft.transliterationStyle.label,
+                    options = TransliterationStyle.entries.map { style ->
+                        style.label to { draft = draft.copy(transliterationStyle = style) }
+                    },
+                )
+                DropdownField(
+                    label = "Playback",
+                    value = draft.playbackMode.label,
+                    options = PlaybackMode.entries.map { mode ->
+                        mode.label to { draft = draft.copy(playbackMode = mode) }
+                    },
+                )
+                DropdownField(
+                    label = "Downloads",
+                    value = draft.downloadScope.label,
+                    options = DownloadScope.entries.map { scope ->
+                        scope.label to { draft = draft.copy(downloadScope = scope) }
+                    },
+                )
+                PauseSliderRow(
+                    pauseMs = draft.pauseBetweenRepeatsMs,
+                    onValueChange = { draft = draft.copy(pauseBetweenRepeatsMs = it) },
+                )
+                SwitchRow(
+                    label = "Loop until stopped",
+                    checked = draft.loopUntilStopped,
+                    onCheckedChange = { draft = draft.copy(loopUntilStopped = it) },
+                )
+            }
+        }
+
+        item {
+            Button(
+                onClick = {
+                    val currentSurah = surah ?: return@Button
+                    val preset = draft.makePreset(existingPreset, currentSurah)
+                    val id = app.userData.savePreset(preset)
+                    app.userData.setLastPresetId(id)
+                    app.notifyDataChanged()
+                    onSaved(preset.copy(id = id))
+                },
+                enabled = surah != null,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (isEditing) "Save changes" else "Save preset")
             }
         }
     }

@@ -16,6 +16,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,12 @@ enum class EzberTab(
 
 @Composable
 fun RootView(app: AppEnvironment) {
+    // The content catalogue is the app's first network request; every screen
+    // reads the cache synchronously and ContentGate handles per-surah fetches.
+    LaunchedEffect(app.contentRepository) {
+        app.contentRepository?.ensureIndex()
+    }
+
     var selectedTabIndex by rememberSaveable { mutableStateOf(0) }
     val navigators = remember {
         EzberTab.entries.associateWith { Navigator(it.initial) }

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import app.ezber.android.AppEnvironment
 import app.ezber.android.R
 import app.ezber.android.models.Surah
+import app.ezber.android.ui.ContentGate
 import app.ezber.android.ui.ScreenScaffold
 import app.ezber.android.ui.SurahRowItem
 
@@ -37,8 +38,22 @@ fun SurahPickerScreen(
     onSelect: (Surah) -> Unit,
     onBack: () -> Unit,
 ) {
+    ScreenScaffold(title = stringResource(R.string.title_surah_picker), onBack = onBack) { padding ->
+        ContentGate(
+            app = app,
+            modifier = Modifier.padding(padding),
+            loadingMessage = "Loading the surah list…",
+        ) {
+            SurahPickerContent(app = app, onSelect = onSelect)
+        }
+    }
+}
+
+@Composable
+private fun SurahPickerContent(app: AppEnvironment, onSelect: (Surah) -> Unit) {
+    val contentRevision = app.contentRepository?.state?.revision ?: 0
     var searchText by rememberSaveable { mutableStateOf("") }
-    val surahs = remember(searchText) {
+    val surahs = remember(searchText, contentRevision) {
         val all = app.content.allSurahs()
         val query = searchText.trim().lowercase()
         if (query.isEmpty()) {
@@ -53,27 +68,25 @@ fun SurahPickerScreen(
         }
     }
 
-    ScreenScaffold(title = stringResource(R.string.title_surah_picker), onBack = onBack) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            OutlinedTextField(
-                value = searchText,
-                onValueChange = { searchText = it },
-                label = { Text("Search surahs") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(surahs, key = { it.id }) { surah ->
-                    SurahRowItem(
-                        surah = surah,
-                        onClick = { onSelect(surah) },
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                    )
-                    HorizontalDivider()
-                }
+    Column(modifier = Modifier.fillMaxSize()) {
+        OutlinedTextField(
+            value = searchText,
+            onValueChange = { searchText = it },
+            label = { Text("Search surahs") },
+            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(surahs, key = { it.id }) { surah ->
+                SurahRowItem(
+                    surah = surah,
+                    onClick = { onSelect(surah) },
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+                HorizontalDivider()
             }
         }
     }

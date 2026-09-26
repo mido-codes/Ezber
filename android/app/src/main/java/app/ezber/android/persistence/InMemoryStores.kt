@@ -14,44 +14,49 @@ import app.ezber.android.models.Verse
 import app.ezber.android.models.VerseId
 import app.ezber.android.models.VerseProgress
 import app.ezber.android.models.VerseRange
-import app.ezber.android.placeholder.PlaceholderContent
+import app.ezber.android.models.VerseWord
+import app.ezber.android.models.WordSegment
 
 /**
- * In-memory content store used for previews and whenever the content pipeline
- * has not produced `ezber-content.sqlite` yet. It serves curated placeholder
- * verses and generates a placeholder verse for any missing position in a
- * range, so every screen renders.
+ * Empty in-memory content store used by Compose previews. The live app always
+ * reads from [SqliteContentStore]; this exists so a preview can render the
+ * loading/empty states without touching a database or the network.
  */
 class InMemoryContentStore(
-    private val surahs: List<Surah> = PlaceholderContent.surahs,
-    private val reciters: List<Reciter> = PlaceholderContent.reciters,
-    private val curatedVerses: List<Verse> = PlaceholderContent.curatedVerses,
+    private val surahs: List<Surah> = emptyList(),
+    private val reciters: List<Reciter> = emptyList(),
+    private val verses: List<Verse> = emptyList(),
+    private val words: Map<Int, List<VerseWord>> = emptyMap(),
+    private val segments: Map<Pair<Int, Int>, List<WordSegment>> = emptyMap(),
 ) : ContentProviding {
 
     override fun allSurahs(): List<Surah> = surahs
 
     override fun surah(id: Int): Surah? = surahs.firstOrNull { it.id == id }
 
-    override fun verses(surahId: Int, inRange: VerseRange): List<Verse> {
-        if (inRange.isEmpty) return emptyList()
-        val curated = curatedVerses
-            .filter { it.surahId == surahId && inRange.contains(it.number) }
-            .associateBy { it.number }
-        return (inRange.start..inRange.end).map { number ->
-            curated[number] ?: PlaceholderContent.generatedVerse(surahId, number)
-        }
-    }
+    override fun verses(surahId: Int, inRange: VerseRange): List<Verse> =
+        verses.filter { it.surahId == surahId && inRange.contains(it.number) }
 
     override fun allReciters(): List<Reciter> = reciters
 
     override fun reciter(id: Int?): Reciter? = reciters.firstOrNull { it.id == id }
 
     override fun downloadState(reciterId: Int, surahId: Int): DownloadState = DownloadState.NOT_DOWNLOADED
+
+    override fun words(ayahIds: List<Int>): Map<Int, List<VerseWord>> =
+        words.filterKeys { it in ayahIds }
+
+    override fun segments(reciterId: Int, ayahIds: List<Int>): Map<Int, List<WordSegment>> =
+        buildMap {
+            for (ayahId in ayahIds) {
+                segments[reciterId to ayahId]?.let { put(ayahId, it) }
+            }
+        }
 }
 
 /**
- * In-memory user data store used for previews and as a fallback when the
- * SQLite store cannot be opened. Behavior matches [SqliteUserDataStore].
+ * In-memory user data store used by previews and as a last-resort fallback when
+ * the SQLite user database cannot be opened. Behavior matches [SqliteUserDataStore].
  */
 class InMemoryUserDataStore : UserDataStore {
 
@@ -196,32 +201,5 @@ class InMemoryUserDataStore : UserDataStore {
 
     companion object {
         private const val LAST_PRESET_KEY = "last_preset_id"
-
-        /** A store seeded with the same placeholder data a fresh install seeds. */
-        fun seeded(): InMemoryUserDataStore {
-            val store = InMemoryUserDataStore()
-            for (preset in PlaceholderContent.seededPresets) {
-                store.savePreset(preset)
-            }
-            for (entry in PlaceholderContent.seededProgress) {
-                store.saveProgress(entry)
-            }
-            for (note in PlaceholderContent.seededNotes) {
-                store.saveNote(note)
-            }
-            PlaceholderContent.seededPresets.firstOrNull()?.let { first ->
-                store.setLastPresetId(first.id)
-                store.savePlanState(
-                    PlanState(
-                        presetId = first.id,
-                        planIndex = 6,
-                        positionMs = 0L,
-                        repetitionCountersJson = null,
-                    ),
-                )
-            }
-            store.setSettingValue("seed.placeholder", "1")
-            return store
-        }
     }
 }

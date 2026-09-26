@@ -1,9 +1,9 @@
 package app.ezber.android.models
 
 /**
- * A reciter whose audio can be streamed or downloaded. The real content
- * pipeline fills these from the `reciters` table; placeholder values are used
- * until it lands.
+ * A reciter whose audio can be streamed or downloaded. The content pipeline
+ * fills these from the `reciters` table; `enabled = false` entries are still
+ * shown so the rights state stays visible.
  */
 data class Reciter(
     val id: Int,
@@ -15,6 +15,9 @@ data class Reciter(
     val licenseId: String = "",
     val hasSegments: Boolean = false,
     val enabled: Boolean = true,
+    val source: String = "",
+    val licenseUrl: String = "",
+    val licenseEvidenceUrl: String = "",
 ) {
     val subtitle: String get() = listOfNotNull(style, qirat).filter { it.isNotBlank() }.joinToString(" · ")
 }
