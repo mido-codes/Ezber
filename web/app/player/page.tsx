@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { buttonClasses } from '@/components/design-system/button'
 import { Card, SectionHeading } from '@/components/design-system/card'
+import { ErrorBlock, LoadingBlock, PlaceholderReadingNote } from '@/components/layout/async-state'
 import { AccentChip, VerseStateChip, type VerseState } from '@/components/design-system/chips'
 import { RepeatBar, SectionSegments } from '@/components/design-system/progress'
 import { TransportControls } from '@/components/design-system/transport-controls'
@@ -50,7 +51,7 @@ function Player() {
   const params = useSearchParams()
   const presetId = params?.get('id') ?? null
 
-  const { data, loading } = useAsync(async (): Promise<PlayerData | null> => {
+  const { data, loading, error, reload } = useAsync(async (): Promise<PlayerData | null> => {
     if (!app.content || !app.user) return null
     let preset: PresetRow | null = null
     if (presetId) preset = (await app.user.getPreset(presetId)) ?? null
@@ -72,12 +73,23 @@ function Player() {
   }, [app.ready, presetId])
 
   if (app.error) return <AppError message={app.error} />
-  if (!app.ready || loading) return <AppSplash message={app.startupMessage} />
-  if (!data) {
+  if (!app.ready) return <AppSplash message={app.startupMessage} />
+  if (error || (!loading && !data)) {
     return (
       <Screen withTabBar={false}>
-        <AppHeader title={app.t('presets.title')} back />
-        <p className="py-10 text-center text-sm text-muted-foreground">{app.t('presets.emptyBody')}</p>
+        <AppHeader title={app.t('common.loading')} back />
+        <ErrorBlock
+          message={error === 'offline' ? app.t('player.offline') : (error ?? app.t('player.loadFailed'))}
+          onRetry={reload}
+        />
+      </Screen>
+    )
+  }
+  if (loading || !data) {
+    return (
+      <Screen withTabBar={false}>
+        <AppHeader title={app.t('common.loading')} back />
+        <LoadingBlock message={app.t('player.loadingSurah')} />
       </Screen>
     )
   }
@@ -313,6 +325,8 @@ function PlayerSession({
         back
         actions={<span className="text-xs text-muted-foreground">{reciter.name}</span>}
       />
+
+      {app.content?.isPlaceholderSurah(preset.surah_id) ? <PlaceholderReadingNote /> : null}
 
       {completed ? (
         <Card className="flex flex-col gap-4">

@@ -7,6 +7,7 @@ import { buttonClasses } from '@/components/design-system/button'
 import { Card, SectionHeading } from '@/components/design-system/card'
 import { VerseStateChip, type VerseState } from '@/components/design-system/chips'
 import { AppError, AppHeader, AppSplash, Screen } from '@/components/layout/app-shell'
+import { ErrorBlock } from '@/components/layout/async-state'
 import { useApp } from '@/lib/app/app-context'
 import { useAsync } from '@/lib/app/use-async'
 import { formatRelativeDay } from '@/lib/utils'
@@ -19,8 +20,9 @@ function VerseDetail() {
   const verseKeyValue = params?.get('key') ?? ''
   const [version, setVersion] = useState(0)
   const [noteDraft, setNoteDraft] = useState('')
+  const { t } = app
 
-  const { data, loading } = useAsync(async () => {
+  const { data, loading, error, reload } = useAsync(async () => {
     if (!app.content || !app.user || !verseKeyValue) return null
     const { surahId } = parseVerseKey(verseKeyValue)
     const [ayah, surah, progress, ratings, notes] = await Promise.all([
@@ -34,8 +36,19 @@ function VerseDetail() {
   }, [app.ready, verseKeyValue, version, app.revision])
 
   if (app.error) return <AppError message={app.error} />
-  if (!app.ready || loading || !data) return <AppSplash message={app.startupMessage} />
-  const { t } = app
+  if (!app.ready) return <AppSplash message={app.startupMessage} />
+  if (error || (!loading && !data)) {
+    return (
+      <Screen>
+        <AppHeader title={t('verseDetail.title', { key: verseKeyValue })} back />
+        <ErrorBlock
+          message={error === 'offline' ? t('player.offline') : (error ?? t('player.loadFailed'))}
+          onRetry={reload}
+        />
+      </Screen>
+    )
+  }
+  if (loading || !data) return <AppSplash message={app.startupMessage} />
   const { ayah, surah, progress, ratings, notes } = data
   const repetitions = progress.reduce((total, row) => total + row.repetitions_done, 0)
   const solid = ratings.filter((rating) => rating.rating === 'solid').length

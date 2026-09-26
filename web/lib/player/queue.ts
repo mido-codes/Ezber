@@ -56,3 +56,41 @@ export function estimateDurationMs(totalRepeats: number, ayahs: AyahRow[]): numb
   const averageVerseMs = Math.max(3200, (wordCount / Math.max(1, ayahs.length)) * 720)
   return Math.round(totalRepeats * averageVerseMs)
 }
+
+/**
+ * Map a flat plan index onto a verse/repeat without loading any content. Used
+ * by Home for the continue card so the home screen never fetches a surah.
+ */
+export function resumePointFor(
+  preset: Pick<PresetRow, 'from_ayah' | 'to_ayah' | 'repeat_count'>,
+  overrides: Record<number, number>,
+  planIndex: number,
+): { verse: number; repeat: number; repeatTotal: number; indexInPass: number; totalInPass: number } {
+  const counts: { ayah: number; count: number }[] = []
+  for (let ayah = preset.from_ayah; ayah <= preset.to_ayah; ayah += 1) {
+    counts.push({ ayah, count: Math.max(1, overrides[ayah] ?? preset.repeat_count) })
+  }
+  const totalInPass = counts.reduce((total, entry) => total + entry.count, 0)
+  const indexInPass = totalInPass > 0 ? ((planIndex % totalInPass) + totalInPass) % totalInPass : 0
+  let cursor = indexInPass
+  for (const entry of counts) {
+    if (cursor < entry.count) {
+      return {
+        verse: entry.ayah,
+        repeat: cursor + 1,
+        repeatTotal: entry.count,
+        indexInPass,
+        totalInPass,
+      }
+    }
+    cursor -= entry.count
+  }
+  const first = counts[0] ?? { ayah: preset.from_ayah, count: 1 }
+  return {
+    verse: first.ayah,
+    repeat: 1,
+    repeatTotal: first.count,
+    indexInPass: 0,
+    totalInPass,
+  }
+}

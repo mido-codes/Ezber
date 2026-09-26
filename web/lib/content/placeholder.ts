@@ -7,14 +7,14 @@ import type {
   SurahRow,
   WordRow,
 } from './types'
-import { buildAyahIdResolver } from './bundle'
 
 /**
- * PLACEHOLDER CONTENT — stands in until the content pipeline web bundle is
- * installed. Surah metadata is real enough to browse. Curated verses carry the
- * Tanzil Uthmani text and a placeholder transliteration; every other verse is
- * generated and clearly marked. No translation is bundled: the captain dropped
- * English translations on 2026-09-25.
+ * PLACEHOLDER CONTENT — stands in until a content bundle (or the local
+ * fixture) is available for a surah. Surah metadata is real enough to browse.
+ * Curated verses carry the Tanzil Uthmani text and a placeholder
+ * transliteration; every other verse is generated and clearly marked. No
+ * translation is bundled: the captain dropped English translations on
+ * 2026-09-25.
  */
 
 type SurahSeed = [number, string, string, string, number, 'Meccan' | 'Medinan']
@@ -238,9 +238,20 @@ const CURATED: CuratedVerse[] = [
   [114, 6, 'مِنَ ٱلْجِنَّةِ وَٱلنَّاسِ', 'Minal-jinnati wan-nas'],
 ]
 
-const curatedByKey = new Map(CURATED.map(([surah, ayah, arabic, translit]) => [`${surah}:${ayah}`, { arabic, translit }]))
+const curatedByKey = new Map(
+  CURATED.map(([surah, ayah, arabic, translit]) => [`${surah}:${ayah}`, { arabic, translit }]),
+)
 
-const resolveAyahId = buildAyahIdResolver(placeholderSurahs)
+/** Cumulative Quran-wide ayah ids for the placeholder surah table. */
+function placeholderAyahId(surahId: number, ayah: number): number {
+  let offset = 0
+  for (const surah of placeholderSurahs) {
+    if (surah.id === surahId) return offset + ayah
+    offset += surah.verses_count
+  }
+  return 0
+}
+
 const surahById = new Map(placeholderSurahs.map((surah) => [surah.id, surah]))
 
 export function placeholderAyah(surahId: number, ayah: number): AyahRow {
@@ -248,7 +259,7 @@ export function placeholderAyah(surahId: number, ayah: number): AyahRow {
   const curated = curatedByKey.get(`${surahId}:${ayah}`)
   const verseKey = `${surahId}:${ayah}`
   return {
-    id: resolveAyahId(surahId, ayah),
+    id: placeholderAyahId(surahId, ayah),
     surah_id: surahId,
     ayah,
     verse_key: verseKey,
@@ -324,6 +335,7 @@ export const placeholderAudioFiles: AudioFileRow[] = []
 
 export const placeholderSummary: ContentSummary = {
   mode: 'placeholder',
+  source: 'placeholder',
   schema_version: 1,
   bundle_id: 'placeholder',
   counts: {
@@ -333,6 +345,8 @@ export const placeholderSummary: ContentSummary = {
     segments: 0,
     audio_files: 0,
   },
+  cached_surahs: 0,
+  cached_segment_sets: 0,
   licenses: [
     {
       id: 'tanzil-quran-text',

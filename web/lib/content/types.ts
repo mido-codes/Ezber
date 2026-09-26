@@ -1,8 +1,13 @@
 /**
  * Content records mirror schema/content_schema.sql one table per interface.
  * Field names stay snake_case so every persisted record maps 1:1 to the
- * canonical SQLite schema; the content pipeline web export is normalised into
- * these shapes before it is written to IndexedDB.
+ * canonical SQLite schema; the grouped web export is normalised into these
+ * shapes before it is cached.
+ *
+ * The web app is online-first and lazy: `/content/index.json` carries only the
+ * small boot index (surah names + reciters + licence metadata), surah documents
+ * are fetched per surah and word timings per reciter/surah. See
+ * web/CONTENT_BUNDLE.md for the transport contract.
  */
 
 export interface ContentMetaRow {
@@ -29,6 +34,8 @@ export interface WordRow {
   text_uthmani: string | null
   transliteration: string
   translation?: string | null
+  /** Denormalised cache field: the surah the word belongs to. */
+  surah_id?: number
 }
 
 export interface AyahRow {
@@ -84,6 +91,8 @@ export interface SegmentRow {
   word_index: number
   start_ms: number
   end_ms: number
+  /** Denormalised from the ayah so segments can be cached per surah. */
+  surah_id?: number
 }
 
 export interface TransliterationRow {
@@ -114,31 +123,71 @@ export interface LicenseEntry {
   attribution?: string
 }
 
-export interface ContentBundleManifest {
-  schema: string
-  schema_version: number
-  pipeline_version?: string
-  content_mode?: string
-  bundle_id?: string
-  counts?: Record<string, number>
-  files?: Record<string, unknown>
-  attribution?: string[]
-  licenses?: LicenseEntry[]
-  notes?: string[]
+/** One entry from the index's `files` inventory. */
+export interface ContentFileEntry {
+  path: string
+  kind: string
+  sha256?: string
+  bytes?: number
+  rows?: number
+  reciter_id?: number
+  surah_id?: number
+  variant?: string
 }
 
-export interface NormalizedBundle {
-  manifest: ContentBundleManifest
+/**
+ * Normalised `/content/index.json`: the only thing loaded at boot. The real
+ * export stores `surahs` and `reciters` as columnar `{columns, rows}` tables and
+ * lists every payload in `files`.
+ */
+export interface ContentIndex {
+  schema: string
+  schema_version: number
+  web_bundle_version: number
+  layout: string
+  pipeline_version?: string
+  content_mode?: string
+  bundle_id: string
+  counts: Record<string, number>
   surahs: SurahRow[]
-  ayahs: AyahRow[]
-  words: WordRow[]
   reciters: ReciterRow[]
-  audio_files: AudioFileRow[]
-  segments: SegmentRow[]
-  transliterations: TransliterationResourceRow[]
-  transliteration_rows: TransliterationRow[]
   licenses: LicenseEntry[]
   attribution: string[]
+  /** Payload inventory from the export. */
+  files: ContentFileEntry[]
+  /** URL templates, derived from `surah_path`/`segments_path` or the inventory. */
+  surah_path: string
+  segments_path: string
+  audio_path?: string
+  /** `licenses_file` from the export, fetched lazily for the credits screen. */
+  licenses_path?: string
+  /** Small inline audio manifests when the export embeds them. */
+  audio_files: AudioFileRow[]
+}
+
+export interface ContentSummary {
+  mode: 'bundle' | 'placeholder'
+  schema_version: number
+  pipeline_version?: string
+  bundle_id?: string
+  /** Where the boot index came from. */
+  source: 'network' | 'cache' | 'placeholder'
+  counts: Record<string, number>
+  licenses: LicenseEntry[]
+  attribution: string[]
+  surah_path?: string
+  segments_path?: string
+  cached_surahs: number
+  cached_segment_sets: number
+  /** Why the export could not be used, when it could not (never silent). */
+  problem?: ContentProblem
+}
+
+/** A recorded reason an export could not be used, surfaced in the UI. */
+export interface ContentProblem {
+  kind: 'unsupported' | 'http' | 'network' | 'offline' | 'parse'
+  message: string
+  status?: number
 }
 
 export interface WordSegment {
@@ -147,12 +196,36 @@ export interface WordSegment {
   end_ms: number
 }
 
-export interface ContentSummary {
-  mode: 'bundle' | 'placeholder'
-  schema_version: number
-  pipeline_version?: string
-  bundle_id?: string
-  counts: Record<string, number>
-  licenses: LicenseEntry[]
-  attribution: string[]
+export interface SurahCacheRow {
+  surah_id: number
+  bundle_id: string
+  rows: number
+  cached_at: string
+}
+
+export interface SegmentsCacheRow {
+  reciter_id: number
+  surah_id: number
+  bundle_id: string
+  variant: string
+  rows: number
+  cached_at: string
+}
+
+export interface CacheStats {
+  surahs: SurahCacheRow[]
+  segment_sets: SegmentsCacheRow[]
+  ayah_rows: number
+  word_rows: number
+  segment_rows: number
+  audio_files: number
+}
+
+export interface ContentProgress {
+  phase: 'index' | 'surah' | 'segments' | 'audio'
+  message: string
+  surah_id?: number
+  reciter_id?: number
+  bytes?: number
+  total_bytes?: number
 }

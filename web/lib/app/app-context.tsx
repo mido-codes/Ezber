@@ -29,6 +29,7 @@ interface AppContextValue {
   theme: ThemeSetting
   revision: number
   refresh: () => void
+  refreshSummary: () => void
   setSetting: (key: string, value: string) => Promise<void>
   setSettings: (patch: Record<string, string>) => Promise<void>
   setLanguage: (language: Language) => Promise<void>
@@ -73,8 +74,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     async function boot() {
       try {
         const contentRepository = await ContentRepository.open({
-          onImport: (message) => {
-            if (!cancelled) setStartupMessage(message)
+          onProgress: (progress) => {
+            if (!cancelled) setStartupMessage(progress.message)
           },
         })
         if (cancelled) return
@@ -125,6 +126,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [language])
 
   const refresh = useCallback(() => setRevision((value) => value + 1), [])
+
+  const refreshSummary = useCallback(() => {
+    setSummary((current) => content?.summary() ?? current)
+  }, [content])
 
   const setSetting = useCallback(
     async (key: string, value: string) => {
@@ -188,6 +193,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       theme,
       revision,
       refresh,
+      refreshSummary,
       setSetting,
       setSettings,
       setLanguage,
@@ -207,6 +213,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       theme,
       revision,
       refresh,
+      refreshSummary,
       setSetting,
       setSettings,
       setLanguage,

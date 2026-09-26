@@ -14,7 +14,17 @@ export interface StoreSpec {
   keyPath?: string | string[]
   autoIncrement?: boolean
   indexes?: IndexSpec[]
+  /** Drop and recreate the store on upgrade (used when its shape changes). */
+  recreate?: boolean
+  /** Delete the store on upgrade and do not create it. */
+  obsolete?: boolean
 }
+
+export type UpgradeHook = (
+  db: IDBDatabase,
+  transaction: IDBTransaction,
+  oldVersion: number,
+) => void
 
 export function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -27,6 +37,7 @@ export function openDatabase(
   name: string,
   version: number,
   stores: StoreSpec[],
+  onUpgrade?: UpgradeHook,
 ): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === 'undefined') {
@@ -34,9 +45,21 @@ export function openDatabase(
       return
     }
     const request = indexedDB.open(name, version)
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result
       for (const spec of stores) {
+        if (spec.obsolete) {
+          if (db.objectStoreNames.contains(spec.name)) {
+            request.transaction!.objectStore(spec.name)
+            db.deleteObjectStore(spec.name)
+          }
+          continue
+        }
+        if (spec.recreate && db.objectStoreNames.contains(spec.name)) {
+          // Touch the store so the versionchange transaction owns it, then drop it.
+          request.transaction!.objectStore(spec.name)
+          db.deleteObjectStore(spec.name)
+        }
         const store = db.objectStoreNames.contains(spec.name)
           ? request.transaction!.objectStore(spec.name)
           : db.createObjectStore(spec.name, {
@@ -52,6 +75,7 @@ export function openDatabase(
           }
         }
       }
+      onUpgrade?.(db, request.transaction!, (event as IDBVersionChangeEvent).oldVersion)
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error ?? new Error(`Could not open ${name}`))
@@ -159,6 +183,30 @@ export async function getFirstByIndex<T>(
 ): Promise<T | undefined> {
   return runTransaction(db, [store], 'readonly', (stores) =>
     requestResult<T | undefined>(stores[store].index(index).get(query)),
+  )
+}
+
+/** Delete every record matching an index key (or key range). */
+export async function deleteByIndex(
+  db: IDBDatabase,
+  store: string,
+  index: string,
+  query: IDBValidKey | IDBKeyRange,
+): Promise<void> {
+  await runTransaction(db, [store], 'readwrite', (stores) =>
+    new Promise<void>((resolve, reject) => {
+      const request = stores[store].index(index).openCursor(query)
+      request.onsuccess = () => {
+        const cursor = request.result
+        if (!cursor) {
+          resolve()
+          return
+        }
+        cursor.delete()
+        cursor.continue()
+      }
+      request.onerror = () => reject(request.error ?? new Error('IndexedDB cursor failed'))
+    }),
   )
 }
 

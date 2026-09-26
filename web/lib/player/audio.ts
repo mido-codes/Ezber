@@ -1,5 +1,4 @@
 import type { ContentRepository } from '../content/repository'
-import { placeholderSegments } from '../content/placeholder'
 import type { AyahRow, ReciterRow, WordSegment } from '../content/types'
 
 export interface ResolvedAudio {
@@ -19,8 +18,8 @@ const cachedUrls = new Map<string, string>()
 
 /**
  * A deterministic placeholder clip: a soft chime, then silence to the verse's
- * estimated length. The chime makes repeat boundaries audible while the content
- * bundle is not installed; the silence keeps long drills pleasant.
+ * estimated length. The chime makes repeat boundaries audible while a reciter
+ * has no rights-cleared audio; the silence keeps long drills pleasant.
  */
 function placeholderWavUrl(durationMs: number): string {
   const cacheKey = `wav:${durationMs}`
@@ -56,7 +55,8 @@ function placeholderWavUrl(durationMs: number): string {
       const t = index / SAMPLE_RATE
       const envelope = Math.exp(-3.2 * t)
       sample =
-        (Math.sin(2 * Math.PI * 523.25 * t) * 0.16 + Math.sin(2 * Math.PI * 784.88 * t) * 0.05) * envelope
+        (Math.sin(2 * Math.PI * 523.25 * t) * 0.16 + Math.sin(2 * Math.PI * 784.88 * t) * 0.05) *
+        envelope
     }
     view.setInt16(44 + index * 2, Math.max(-1, Math.min(1, sample)) * 32767, true)
   }
@@ -78,35 +78,50 @@ export function placeholderSampleUrl(): string {
 
 export class PlaceholderDrillAudioResolver implements DrillAudioResolver {
   async resolve(reciter: ReciterRow, ayah: AyahRow, _variant?: string): Promise<ResolvedAudio> {
+    void reciter
     const durationMs = placeholderDurationMs(ayah)
     return {
       url: placeholderWavUrl(durationMs),
       durationMs,
-      segments: placeholderSegments(ayah, reciter.id)
-        .filter((segment) => segment.word_index > 0)
-        .map((segment) => ({
-          word_index: segment.word_index,
-          start_ms: segment.start_ms,
-          end_ms: segment.end_ms,
-        })),
+      segments: [],
       source: 'placeholder',
     }
   }
 }
 
 /**
- * Resolves real audio from the installed content bundle and falls back to the
- * placeholder clip when the bundle ships no audio for the reciter/surah yet
- * (the current state: reciters stay disabled until rights confirmation).
+ * Resolves audio and word timings from the lazily loaded content export.
+ *
+ * Timings are fetched per reciter/surah from `/content/segments/...` and win
+ * even when the reciter has no rights-cleared audio yet: the placeholder chime
+ * plays, while the active-word highlight follows the real segment data. A
+ * missing or unreachable timing file never blocks playback.
  */
 export class ContentDrillAudioResolver implements DrillAudioResolver {
+  private readonly content: ContentRepository
+  private readonly fallback: DrillAudioResolver
+
   constructor(
-    private readonly content: ContentRepository,
-    private readonly fallback: DrillAudioResolver = new PlaceholderDrillAudioResolver(),
-  ) {}
+    content: ContentRepository,
+    fallback: DrillAudioResolver = new PlaceholderDrillAudioResolver(),
+  ) {
+    this.content = content
+    this.fallback = fallback
+  }
 
   async resolve(reciter: ReciterRow, ayah: AyahRow, variant?: string): Promise<ResolvedAudio> {
-    const files = await this.content.audioFiles(reciter.id, ayah.surah_id)
+    const [files, segmentRows] = await Promise.all([
+      this.content.audioFiles(reciter.id, ayah.surah_id).catch(() => []),
+      this.content.segmentsForAyah(reciter.id, ayah, variant).catch(() => []),
+    ])
+    const mapped: WordSegment[] = segmentRows
+      .filter((segment) => segment.word_index > 0)
+      .map((segment) => ({
+        word_index: segment.word_index,
+        start_ms: segment.start_ms,
+        end_ms: segment.end_ms,
+      }))
+
     const wantedVariant = variant ?? 'default'
     const match =
       files.find(
@@ -116,23 +131,27 @@ export class ContentDrillAudioResolver implements DrillAudioResolver {
           (file.variant === wantedVariant || wantedVariant === 'default'),
       ) ??
       files.find((file) => file.kind === 'chapter' && file.chapter === ayah.surah_id) ??
-      files[0]
+      files.find((file) => Boolean(file.url))
+
     if (!match?.url || match.url.startsWith('placeholder')) {
-      return this.fallback.resolve(reciter, ayah, variant)
+      const fallback = await this.fallback.resolve(reciter, ayah, variant)
+      const durationMs = Math.max(
+        fallback.durationMs,
+        ...mapped.map((segment) => segment.end_ms),
+        placeholderDurationMs(ayah),
+      )
+      return {
+        url: fallback.url,
+        durationMs,
+        segments: mapped.length > 0 ? mapped : fallback.segments,
+        source: 'placeholder',
+      }
     }
-    const segments = (await this.content.segments(reciter.id, ayah.id, match.variant))
-      .filter((segment) => segment.word_index > 0)
-      .map((segment) => ({
-        word_index: segment.word_index,
-        start_ms: segment.start_ms,
-        end_ms: segment.end_ms,
-      }))
-    const durationMs =
-      match.duration_ms ??
-      (segments.length > 0
-        ? Math.max(...segments.map((segment) => segment.end_ms))
-        : placeholderDurationMs(ayah))
-    const url = typeof window === 'undefined' ? match.url : new URL(match.url, window.location.href).href
-    return { url, durationMs, segments, source: 'bundle' }
+
+    const segmentEnd = mapped.length > 0 ? Math.max(...mapped.map((segment) => segment.end_ms)) : 0
+    const durationMs = match.duration_ms ?? (segmentEnd || placeholderDurationMs(ayah))
+    const url =
+      typeof window === 'undefined' ? match.url : new URL(match.url, window.location.href).href
+    return { url, durationMs, segments: mapped, source: 'bundle' }
   }
 }
