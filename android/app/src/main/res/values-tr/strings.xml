@@ -29,4 +29,9 @@
     <string name="title_notes">Notlar</string>
     <string name="title_settings">Ayarlar</string>
     <string name="title_credits">Katkılar ve lisanslar</string>
+
+    <string name="notification_channel_playback">Çalma</string>
+    <string name="player_loading_audio">Ses hazırlanıyor…</string>
+    <string name="player_loading_progress">Ses hazırlanıyor: %1$d/%2$d…</string>
+    <string name="player_error_retry">Yeniden denemek için oynat düğmesine dokunun</string>
 </resources>

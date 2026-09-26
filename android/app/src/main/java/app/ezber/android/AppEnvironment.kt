@@ -4,6 +4,10 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
+import app.ezber.android.audio.AudioCache
+import app.ezber.android.audio.MediaAudioSessionService
+import app.ezber.android.audio.MediaControllerAudioPlayer
+import app.ezber.android.audio.MediaDrillSessionService
 import app.ezber.android.models.PlanState
 import app.ezber.android.persistence.ContentProviding
 import app.ezber.android.persistence.InMemoryContentStore
@@ -36,6 +40,7 @@ class AppEnvironment(
     val settings: AppSettings,
     val contentStoreDescription: String,
     val userStoreDescription: String,
+    val audioCache: AudioCache,
 ) {
 
     /** Bumped whenever user data changes so list screens refresh. */
@@ -93,12 +98,20 @@ class AppEnvironment(
             }
             val userData: UserDataStore = sqliteUser ?: InMemoryUserDataStore()
 
+            val appContext = context.applicationContext
+            val audioCache = AudioCache(appContext)
+            val mediaPlayer = MediaControllerAudioPlayer(appContext)
+
             return AppEnvironment(
                 content = content,
                 userData = userData,
-                audioSession = StubAudioSessionService(),
-                audioPlayer = StubAudioPlayer(),
-                drillSession = StubDrillSessionService(),
+                audioSession = MediaAudioSessionService(mediaPlayer),
+                audioPlayer = mediaPlayer,
+                drillSession = MediaDrillSessionService(
+                    content = content,
+                    cache = audioCache,
+                    player = mediaPlayer,
+                ),
                 voiceMemo = StubVoiceMemoService(),
                 settings = AppSettings.from(context),
                 contentStoreDescription = if (sqliteContent != null) {
@@ -111,6 +124,7 @@ class AppEnvironment(
                 } else {
                     "In-memory fallback"
                 },
+                audioCache = audioCache,
             )
         }
 
@@ -125,6 +139,7 @@ class AppEnvironment(
             settings = AppSettings.forPreview(context),
             contentStoreDescription = "Placeholder · preview",
             userStoreDescription = "In-memory · preview",
+            audioCache = AudioCache(context.applicationContext),
         )
     }
 }

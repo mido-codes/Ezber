@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -122,6 +123,7 @@ private fun StudyPlayerContent(model: StudyPlayerModel, onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 PositionHeader(model)
+                AudioStatusCard(model)
                 VerseCard(model)
                 QueueCard(model)
             }
@@ -131,6 +133,51 @@ private fun StudyPlayerContent(model: StudyPlayerModel, onBack: () -> Unit) {
 
     if (showNoteComposer) {
         NoteComposerDialog(model = model, onDismiss = { showNoteComposer = false })
+    }
+}
+
+@Composable
+private fun AudioStatusCard(model: StudyPlayerModel) {
+    val message = when {
+        !model.hasReciter -> "Choose a reciter to hear this drill"
+        model.errorMessage != null -> model.errorMessage
+        model.isLoading && model.state.audioTotalCount > 0 -> stringResource(
+            R.string.player_loading_progress,
+            model.state.audioReadyCount,
+            model.state.audioTotalCount,
+        )
+        model.isLoading -> stringResource(R.string.player_loading_audio)
+        else -> null
+    } ?: return
+
+    EzberCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (model.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                )
+                Spacer(Modifier.size(12.dp))
+            }
+            Column {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (model.errorMessage != null) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+                if (model.errorMessage != null) {
+                    Text(
+                        text = stringResource(R.string.player_error_retry),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 

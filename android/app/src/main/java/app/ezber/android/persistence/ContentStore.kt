@@ -2,6 +2,7 @@ package app.ezber.android.persistence
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import app.ezber.android.models.AudioFileEntry
 import app.ezber.android.models.DownloadState
 import app.ezber.android.models.Reciter
 import app.ezber.android.models.RevelationPlace
@@ -19,6 +20,14 @@ interface ContentProviding {
     fun allReciters(): List<Reciter>
     fun reciter(id: Int?): Reciter?
     fun downloadState(reciterId: Int, surahId: Int): DownloadState
+
+    /**
+     * The audio manifest rows for one reciter and surah, as shipped by the
+     * content pipeline. The drill audio resolver picks an ayah file, else a
+     * chapter file, and downloads/caches the result. Stores that predate audio
+     * (placeholder content) simply return an empty list.
+     */
+    fun audioFiles(reciterId: Int, surahId: Int): List<AudioFileEntry> = emptyList()
 }
 
 /**
@@ -170,6 +179,39 @@ class SqliteContentStore private constructor(
             arrayOf(reciterId.toString(), surahId.toString()),
         ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) else 0 }
         return if (downloaded > 0) DownloadState.DOWNLOADED else DownloadState.NOT_DOWNLOADED
+    }
+
+    override fun audioFiles(reciterId: Int, surahId: Int): List<AudioFileEntry> = database.rawQuery(
+        """
+        SELECT id, reciter_id, kind, surah_id, ayah, chapter, variant, url,
+               bytes, bitrate, duration_ms, checksum
+        FROM audio_files
+        WHERE reciter_id = ?
+          AND (surah_id = ? OR chapter = ?)
+        ORDER BY kind = 'chapter', ayah, id
+        """.trimIndent(),
+        arrayOf(reciterId.toString(), surahId.toString(), surahId.toString()),
+    ).use { cursor ->
+        buildList {
+            while (cursor.moveToNext()) {
+                add(
+                    AudioFileEntry(
+                        id = cursor.getLong(0),
+                        reciterId = cursor.getInt(1),
+                        kind = cursor.getString(2).orEmpty(),
+                        surahId = if (cursor.isNull(3)) null else cursor.getInt(3),
+                        ayah = if (cursor.isNull(4)) null else cursor.getInt(4),
+                        chapter = if (cursor.isNull(5)) null else cursor.getInt(5),
+                        variant = cursor.getString(6).orEmpty(),
+                        url = cursor.getString(7).orEmpty(),
+                        bytes = if (cursor.isNull(8)) null else cursor.getLong(8),
+                        bitrate = if (cursor.isNull(9)) null else cursor.getInt(9),
+                        durationMs = if (cursor.isNull(10)) null else cursor.getLong(10),
+                        checksum = cursor.getString(11),
+                    ),
+                )
+            }
+        }
     }
 
     private data class VerseRow(

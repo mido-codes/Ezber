@@ -21,6 +21,11 @@ data class DrillAudioItem(
     val verseKey: String,
     val repeatIndex: Int,
     val mimeType: String? = null,
+    val title: String? = null,
+    val subtitle: String? = null,
+    val albumTitle: String? = null,
+    val artist: String? = null,
+    val extras: Map<String, String> = emptyMap(),
 )
 
 /** Metadata the app would publish to the lock screen / Android Auto. */
@@ -57,6 +62,7 @@ interface AudioPlayer {
     fun play()
     fun pause()
     fun seekTo(mediaItemIndex: Int, positionMs: Long)
+    fun setLooping(looping: Boolean)
     fun release()
 
     fun addListener(listener: Listener)
@@ -66,6 +72,14 @@ interface AudioPlayer {
         fun onPlaybackStateChanged(state: State) {}
         fun onIsPlayingChanged(isPlaying: Boolean) {}
         fun onMediaItemTransition(mediaItem: DrillAudioItem?, reason: Int) {}
+    }
+
+    companion object {
+        /** Mirrors `Player.MEDIA_ITEM_TRANSITION_REASON_*` with stable values. */
+        const val REASON_AUTO = 1
+        const val REASON_REPEAT = 2
+        const val REASON_SEEK = 3
+        const val REASON_PLAYLIST_CHANGED = 4
     }
 }
 
@@ -171,6 +185,10 @@ class StubAudioPlayer : AudioPlayer {
     override fun seekTo(mediaItemIndex: Int, positionMs: Long) {
         currentMediaItemIndex = mediaItemIndex.coerceIn(0, maxOf(0, items.lastIndex))
         currentPositionMs = maxOf(0L, positionMs)
+    }
+
+    override fun setLooping(looping: Boolean) {
+        // The stub always advances linearly; loop semantics live in the engine.
     }
 
     override fun release() {
